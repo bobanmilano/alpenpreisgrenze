@@ -13,9 +13,17 @@ Duch eine Scan des Produktbarcodes mit der AlpenPreisGrenze App bekommt der Benu
 Österreich-Aufschlag angezeigt. Falls vorhanden auch die Höhe der "Shrinkflation" (gleicher Preis, weniger Inhalt) und/oder der
 "Sizefuscation" (handelsunübliche Packungsgrößen die der Preisverschleierung dienen).
 
+<p align="center">
+<img src="assets/img-4.png" alt="Installations-QR-Code" width="200">
+</p>
+
 ## 🚀 Österreich-Aufschlag teilen
 
 User können ihre entdeckten Österreich-Aufschläge (aber auch die von anderen Users) schnell und einfach aus der App heraus in den Sozialen Medien teilen. Auch gibt es die Möglichkeit vorgefertigte E-Mails an den Kundendienst des entsprechenden Händlers zu senden! Darin wird auf die gefundene Preisdifferenz aufmerksam gemacht und um Erklärung ersucht wie es dazu kommt! 
+
+<p align="center">
+<img src="assets/img-5.png" alt="Installations-QR-Code" width="200">
+</p>
 
 ## ✊ Gemeinsam Druck auf den Handel ausüben
 
