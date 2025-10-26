@@ -1,4 +1,3 @@
-// lib/screens/home_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:community_material_icon/community_material_icon.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -157,6 +156,9 @@ class _HomePageContent extends StatelessWidget {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
+    // Hole die aktuelle Firebase UID
+    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       appBar: AppBar(
         title: Image.asset(
@@ -257,41 +259,43 @@ class _HomePageContent extends StatelessWidget {
           ),
         ),
       ),
-       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: Text('Option auswählen'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: Icon(Icons.update),
-                    title: Text('User-IDs aktualisieren'),
-                    onTap: () {
-                      Navigator.pop(context); // Schließe den Dialog
-                      updateUserIds(context);
-                    },
+      floatingActionButton: currentUserId == 'LK0UJ40jzkcpuCcgxHqFR5I8OoW2'
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: Text('Option auswählen'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: Icon(Icons.update),
+                          title: Text('User-IDs aktualisieren'),
+                          onTap: () {
+                            Navigator.pop(context); // Schließe den Dialog
+                            updateUserIds(context);
+                          },
+                        ),
+                        ListTile(
+                          leading: Icon(Icons.delete),
+                          title: Text('Alte Einträge löschen'),
+                          onTap: () {
+                            Navigator.pop(context); // Schließe den Dialog
+                            deleteOldEntries(context);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  ListTile(
-                    leading: Icon(Icons.delete),
-                    title: Text('Alte Einträge löschen'),
-                    onTap: () {
-                      Navigator.pop(context); // Schließe den Dialog
-                      deleteOldEntries(context);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-        icon: Icon(Icons.build),
-        label: Text('Verwalten'),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-      ),
+                );
+              },
+              icon: Icon(Icons.build),
+              label: Text('Verwalten'),
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+            )
+          : null, // Der Button wird nur für die spezifische UID angezeigt
     );
   }
 

@@ -31,6 +31,10 @@ Das Ziel ist es in einer koordinierten, gemeinschaftlichen Aktion die sozialen N
 
 ## 📱 Installation
 
+Scannen sie den QR-Code um direkt die aktuellse release zu installieren:
+
+![QR-Code Release](assets/github-release-1.0.2.png)
+
 Laden Sie die neueste Version der App aus den [Releases](https://github.com/bobanmilano/alpenpreisgrenze/releases/latest) herunter.
 
 1.  Laden Sie die Datei `app-release.apk` herunter.
