@@ -31,16 +31,22 @@ Das Ziel ist es in einer koordinierten, gemeinschaftlichen Aktion die sozialen N
 
 ## 📱 Installation
 
-Scannen sie den QR-Code um direkt die aktuellse release zu installieren:
+Sie können die App auf zwei Arten installieren:
 
-![QR-Code Release](assets/github-release-1.0.2.png)
+Option 1: Direkt per QR-Code (einfachster Weg)
+Scannen Sie den folgenden QR-Code mit der Kamera Ihres Smartphones. Sie werden direkt zum Download der neuesten Version weitergeleitet.
 
-Laden Sie die neueste Version der App aus den [Releases](https://github.com/bobanmilano/alpenpreisgrenze/releases/latest) herunter.
+<p align="center">
+<img src="assets/github-release-1.0.2.png" alt="Installations-QR-Code" width="200">
+</p>
 
-1.  Laden Sie die Datei `app-release.apk` herunter.
-2.  Öffnen Sie die Datei auf Ihrem Android-Gerät.
-3.  Folgen Sie den Anweisungen zur Installation. Falls eine Sicherheitsmeldung erscheint, tippen Sie auf "Einstellungen" und aktivieren Sie "Unbekannte Quellen" oder tippen Sie direkt auf installieren".
-4.  Starten Sie die App.
+Option 2: Manueller Download
+Laden Sie die neueste Version der App aus den Releases herunter.
+
+Laden Sie die Datei app-release.apk herunter.
+Öffnen Sie die Datei auf Ihrem Android-Gerät.
+Folgen Sie den Anweisungen zur Installation. Falls eine Sicherheitsmeldung erscheint, tippen Sie auf "Einstellungen" und aktivieren Sie "Unbekannte Quellen" oder tippen Sie direkt auf "Installieren".
+Starten Sie die App.
 
 ### Systemanforderungen
 - Android 7.0 oder höher
