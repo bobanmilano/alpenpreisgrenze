@@ -14,7 +14,7 @@ Duch eine Scan des Produktbarcodes mit der AlpenPreisGrenze App bekommt der Benu
 "Sizefuscation" (handelsunübliche Packungsgrößen die der Preisverschleierung dienen).
 
 <p align="center">
-<img src="assets/img-4.png" alt="Österreich-Aufschlag entdecken" width="200">
+<img src="assets/img-4.png" alt="Österreich-Aufschlag entdecken" width="350">
 </p>
 
 ## 🚀 Österreich-Aufschlag teilen
@@ -22,7 +22,7 @@ Duch eine Scan des Produktbarcodes mit der AlpenPreisGrenze App bekommt der Benu
 User können ihre entdeckten Österreich-Aufschläge (aber auch die von anderen Users) schnell und einfach aus der App heraus in den Sozialen Medien teilen. Auch gibt es die Möglichkeit vorgefertigte E-Mails an den Kundendienst des entsprechenden Händlers zu senden! Darin wird auf die gefundene Preisdifferenz aufmerksam gemacht und um Erklärung ersucht wie es dazu kommt! 
 
 <p align="center">
-<img src="assets/img-5.png" alt="Entdeckungen teilen" width="200">
+<img src="assets/img-5.png" alt="Entdeckungen teilen" width="350">
 </p>
 
 ## ✊ Gemeinsam Druck auf den Handel ausüben
