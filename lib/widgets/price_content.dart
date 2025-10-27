@@ -51,7 +51,9 @@ class PriceContent extends StatelessWidget {
         ),
         if (pricePerKg != null)
           Text(
-            priceText.split('\n')[1],
+            // ignore: unnecessary_null_comparison
+            '(€' + pricePerKg.toStringAsFixed(2) + '/' + getDisplayUnit(priceEntry.quantity)! + ')', 
+            //priceEntry.quantity!,
             style: Theme.of(context).textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),

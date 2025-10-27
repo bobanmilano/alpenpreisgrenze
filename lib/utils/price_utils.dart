@@ -73,6 +73,7 @@ String? getRegularDisplayUnit(String? quantity) {
 
 }
 
+
 // lib/utils/price_utils.dart
 
 // Prüft, ob die Mengen stark unterschiedlich sind
@@ -118,6 +119,16 @@ String? getUnitFromQuantity(String? quantity) {
 
   return match.group(0);
 }
+
+  String? formatMonthYear(DateTime dateTime) {
+    // Liste der Monatsnamen
+    const List<String> monthNames = [
+      "Januar", "Februar", "März", "April", "Mai", "Juni",
+      "Juli", "August", "September", "Oktober", "November", "Dezember"
+    ];
+    // Rückgabe: "Monatsname Jahr"
+    return "${monthNames[dateTime.month - 1]} ${dateTime.year}";
+  }
 
 double? calculatePricePerUnit(double price, String? quantity) {
   if (quantity == null || quantity.isEmpty) return null;

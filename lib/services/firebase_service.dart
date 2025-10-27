@@ -88,15 +88,20 @@ class FirebaseService {
       query = query.where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo);
     }
 
-    // Sortierung nach dem Zeitstempel
-    query = query.orderBy('timestamp', descending: true);
-
-    // Suchfilter (nach Produktnamen oder Stadt)
+    // Sortierung nach dem Zeitstempel ODER nach product_name für die Präfixsuche
     if (searchQuery.isNotEmpty) {
-      query = query.where(
-        'searchKeywords',
-        arrayContains: searchQuery.toLowerCase(),
-      );
+      // Wenn Suchbegriff vorhanden, sortiere nach product_name (für Präfixsuche)
+      query = query.orderBy('product_name', descending: false);
+    } else {
+      // Wenn kein Suchbegriff, sortiere nach Timestamp (wie vorher)
+      query = query.orderBy('timestamp', descending: true);
+    }
+
+    // Suchfilter (Präfixsuche nach Produktnamen - exakt wie eingegeben)
+    if (searchQuery.isNotEmpty) {
+        // Verwende \uf8ff als "Ende des Zeichensatzes" für die Präfixsuche
+        query = query.where('product_name', isGreaterThanOrEqualTo: searchQuery)
+                     .where('product_name', isLessThanOrEqualTo: "$searchQuery\uf8ff");
     }
 
     // Begrenzung der Ergebnisse
@@ -292,7 +297,7 @@ class FirebaseService {
         // Kein bestehender Eintrag → füge neuen hinzu
         final docRef = await _firestore.collection(collectionName).add({
           'barcode': priceEntry.barcode,
-          'product_name': priceEntry.productName,
+          'product_name': priceEntry.productName, // Speichere den Namen so wie er ist
           'brands': priceEntry.brands,
           'quantity': priceEntry.quantity,
           'price': priceEntry.price,
@@ -366,6 +371,114 @@ class FirebaseService {
             return null;
           }
         });
+  }
+
+    // NEUE Methode: Suche nach Präfix in product_name, store oder city - GIBT EINE LISTE ZURÜCK
+  Future<List<PriceEntry>> searchPricesByPrefix(
+    String userId,
+    int limit,
+    String searchQuery,
+    String activeFilter,
+  ) async {
+    if (searchQuery.isEmpty) {
+      return [];
+    }
+
+    // Liste aller gefundenen Dokumente sammeln
+    Set<DocumentSnapshot> allResults = {};
+
+    // 1. Suche nach product_name
+    Query queryProduct = _firestore.collection(collectionName);
+    if (activeFilter == 'meine_scans') {
+      queryProduct = queryProduct.where('user_id', isEqualTo: userId);
+    } else if (activeFilter == 'aktuelle_scans') {
+      final now = DateTime.now();
+      final sevenDaysAgo = now.subtract(Duration(days: 7));
+      queryProduct = queryProduct.where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo);
+    }
+    queryProduct = queryProduct
+        .orderBy('product_name', descending: false)
+        .where('product_name', isGreaterThanOrEqualTo: searchQuery)
+        .where('product_name', isLessThanOrEqualTo: "$searchQuery\uf8ff")
+        .limit(limit);
+
+    final productSnapshot = await queryProduct.get();
+    allResults.addAll(productSnapshot.docs);
+
+    // 2. Suche nach store
+    Query queryStore = _firestore.collection(collectionName);
+    if (activeFilter == 'meine_scans') {
+      queryStore = queryStore.where('user_id', isEqualTo: userId);
+    } else if (activeFilter == 'aktuelle_scans') {
+      final now = DateTime.now();
+      final sevenDaysAgo = now.subtract(Duration(days: 7));
+      queryStore = queryStore.where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo);
+    }
+    queryStore = queryStore
+        .orderBy('store', descending: false)
+        .where('store', isGreaterThanOrEqualTo: searchQuery)
+        .where('store', isLessThanOrEqualTo: "$searchQuery\uf8ff")
+        .limit(limit);
+
+    final storeSnapshot = await queryStore.get();
+    allResults.addAll(storeSnapshot.docs);
+
+    // 3. Suche nach city
+    Query queryCity = _firestore.collection(collectionName);
+    if (activeFilter == 'meine_scans') {
+      queryCity = queryCity.where('user_id', isEqualTo: userId);
+    } else if (activeFilter == 'aktuelle_scans') {
+      final now = DateTime.now();
+      final sevenDaysAgo = now.subtract(Duration(days: 7));
+      queryCity = queryCity.where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo);
+    }
+    queryCity = queryCity
+        .orderBy('city', descending: false)
+        .where('city', isGreaterThanOrEqualTo: searchQuery)
+        .where('city', isLessThanOrEqualTo: "$searchQuery\uf8ff")
+        .limit(limit);
+
+    final citySnapshot = await queryCity.get();
+    allResults.addAll(citySnapshot.docs);
+
+    // Konvertiere Set zu List und sortiere nach Timestamp (oder einem anderen Kriterium)
+    List<DocumentSnapshot> sortedResults = allResults.toList();
+    sortedResults.sort((a, b) {
+      final timestampA = (a.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+      final timestampB = (b.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+      return (timestampB?.millisecondsSinceEpoch ?? 0).compareTo(timestampA?.millisecondsSinceEpoch ?? 0);
+    });
+
+    // Begrenze die Gesamtanzahl der Ergebnisse
+    if (sortedResults.length > limit) {
+        sortedResults = sortedResults.take(limit).toList();
+    }
+
+    // Konvertiere zu PriceEntry
+    return sortedResults.map((doc) => PriceEntry.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
+  }
+
+
+    // Methode zum Abrufen *aller* Preis-Einträge für den aktuellen Monat
+  Stream<List<PriceEntry>> getAllPricesForCurrentMonth() {
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+    final endOfMonth = DateTime(now.year, now.month + 1, 0); // Letzter Tag des Monats
+
+    final startTimestamp = Timestamp.fromDate(startOfMonth);
+    final endTimestamp = Timestamp.fromDate(endOfMonth);
+
+    Query query = _firestore
+        .collection(collectionName)
+        .where('timestamp', isGreaterThanOrEqualTo: startTimestamp)
+        .where('timestamp', isLessThanOrEqualTo: endTimestamp)
+        .orderBy('timestamp', descending: true); // Optional, für Anzeige
+
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => PriceEntry.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+          .toList();
+    });
   }
 
   // Methode zum Abrufen *aller* Preis-Einträge des aktuellen Benutzers für einen Barcode

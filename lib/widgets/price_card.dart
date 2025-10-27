@@ -281,7 +281,7 @@ class _PriceCardState extends State<PriceCard>
 
   Widget _buildNoPriceWidget(BuildContext context) {
     return SizedBox(
-      height: 280, // Feste Höhe für die Card
+      height: 250, // Feste Höhe für die Card
       child: Column(
         mainAxisAlignment:
             MainAxisAlignment.spaceBetween, // Verteilt die Kinder
