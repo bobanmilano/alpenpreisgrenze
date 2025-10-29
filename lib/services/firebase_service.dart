@@ -99,9 +99,10 @@ class FirebaseService {
 
     // Suchfilter (Präfixsuche nach Produktnamen - exakt wie eingegeben)
     if (searchQuery.isNotEmpty) {
-        // Verwende \uf8ff als "Ende des Zeichensatzes" für die Präfixsuche
-        query = query.where('product_name', isGreaterThanOrEqualTo: searchQuery)
-                     .where('product_name', isLessThanOrEqualTo: "$searchQuery\uf8ff");
+      // Verwende \uf8ff als "Ende des Zeichensatzes" für die Präfixsuche
+      query = query
+          .where('product_name', isGreaterThanOrEqualTo: searchQuery)
+          .where('product_name', isLessThanOrEqualTo: "$searchQuery\uf8ff");
     }
 
     // Begrenzung der Ergebnisse
@@ -297,7 +298,8 @@ class FirebaseService {
         // Kein bestehender Eintrag → füge neuen hinzu
         final docRef = await _firestore.collection(collectionName).add({
           'barcode': priceEntry.barcode,
-          'product_name': priceEntry.productName, // Speichere den Namen so wie er ist
+          'product_name':
+              priceEntry.productName, // Speichere den Namen so wie er ist
           'brands': priceEntry.brands,
           'quantity': priceEntry.quantity,
           'price': priceEntry.price,
@@ -373,7 +375,19 @@ class FirebaseService {
         });
   }
 
-    // NEUE Methode: Suche nach Präfix in product_name, store oder city - GIBT EINE LISTE ZURÜCK
+  // --- NEU: Methode zum Löschen eines Preis-Eintrags nach ID ---
+  Future<void> deletePriceEntryById(String docId) async {
+    try {
+      await FirebaseFirestore.instance.collection('prices').doc(docId).delete();
+      print("DEBUG: Preis-Eintrag mit ID $docId erfolgreich gelöscht.");
+    } catch (e) {
+      print("Fehler beim Löschen des Preis-Eintrags mit ID $docId: $e");
+      rethrow; // Wirf den Fehler erneut, damit der Aufrufer ihn behandeln kann
+    }
+  }
+  // --- ENDE NEU ---
+
+  // NEUE Methode: Suche nach Präfix in product_name, store oder city - GIBT EINE LISTE ZURÜCK
   Future<List<PriceEntry>> searchPricesByPrefix(
     String userId,
     int limit,
@@ -394,7 +408,10 @@ class FirebaseService {
     } else if (activeFilter == 'aktuelle_scans') {
       final now = DateTime.now();
       final sevenDaysAgo = now.subtract(Duration(days: 7));
-      queryProduct = queryProduct.where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo);
+      queryProduct = queryProduct.where(
+        'timestamp',
+        isGreaterThanOrEqualTo: sevenDaysAgo,
+      );
     }
     queryProduct = queryProduct
         .orderBy('product_name', descending: false)
@@ -412,7 +429,10 @@ class FirebaseService {
     } else if (activeFilter == 'aktuelle_scans') {
       final now = DateTime.now();
       final sevenDaysAgo = now.subtract(Duration(days: 7));
-      queryStore = queryStore.where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo);
+      queryStore = queryStore.where(
+        'timestamp',
+        isGreaterThanOrEqualTo: sevenDaysAgo,
+      );
     }
     queryStore = queryStore
         .orderBy('store', descending: false)
@@ -430,7 +450,10 @@ class FirebaseService {
     } else if (activeFilter == 'aktuelle_scans') {
       final now = DateTime.now();
       final sevenDaysAgo = now.subtract(Duration(days: 7));
-      queryCity = queryCity.where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo);
+      queryCity = queryCity.where(
+        'timestamp',
+        isGreaterThanOrEqualTo: sevenDaysAgo,
+      );
     }
     queryCity = queryCity
         .orderBy('city', descending: false)
@@ -444,26 +467,38 @@ class FirebaseService {
     // Konvertiere Set zu List und sortiere nach Timestamp (oder einem anderen Kriterium)
     List<DocumentSnapshot> sortedResults = allResults.toList();
     sortedResults.sort((a, b) {
-      final timestampA = (a.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
-      final timestampB = (b.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
-      return (timestampB?.millisecondsSinceEpoch ?? 0).compareTo(timestampA?.millisecondsSinceEpoch ?? 0);
+      final timestampA =
+          (a.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+      final timestampB =
+          (b.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+      return (timestampB?.millisecondsSinceEpoch ?? 0).compareTo(
+        timestampA?.millisecondsSinceEpoch ?? 0,
+      );
     });
 
     // Begrenze die Gesamtanzahl der Ergebnisse
     if (sortedResults.length > limit) {
-        sortedResults = sortedResults.take(limit).toList();
+      sortedResults = sortedResults.take(limit).toList();
     }
 
     // Konvertiere zu PriceEntry
-    return sortedResults.map((doc) => PriceEntry.fromMap(doc.data() as Map<String, dynamic>, doc.id)).toList();
+    return sortedResults
+        .map(
+          (doc) =>
+              PriceEntry.fromMap(doc.data() as Map<String, dynamic>, doc.id),
+        )
+        .toList();
   }
 
-
-    // Methode zum Abrufen *aller* Preis-Einträge für den aktuellen Monat
+  // Methode zum Abrufen *aller* Preis-Einträge für den aktuellen Monat
   Stream<List<PriceEntry>> getAllPricesForCurrentMonth() {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
-    final endOfMonth = DateTime(now.year, now.month + 1, 0); // Letzter Tag des Monats
+    final endOfMonth = DateTime(
+      now.year,
+      now.month + 1,
+      0,
+    ); // Letzter Tag des Monats
 
     final startTimestamp = Timestamp.fromDate(startOfMonth);
     final endTimestamp = Timestamp.fromDate(endOfMonth);
@@ -476,7 +511,10 @@ class FirebaseService {
 
     return query.snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => PriceEntry.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+          .map(
+            (doc) =>
+                PriceEntry.fromMap(doc.data() as Map<String, dynamic>, doc.id),
+          )
           .toList();
     });
   }

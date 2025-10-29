@@ -30,6 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('Registrieren'), 
@@ -38,6 +39,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.colorScheme.primaryContainer.withOpacity(0.2),
+              theme.colorScheme.background,
+            ],
+          ),
+        ),
         padding: EdgeInsets.all(AppSpacing.m),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,6 +351,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
         ),
       ),
+      )
     );
   }
 

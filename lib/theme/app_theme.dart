@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primärfarben
-  static const Color primary = Color(0xFF2E86AB);     // Blau-Turquoise
-  static const Color secondary = Color(0xFFF2F2F2);   // Warmes Grau
-  static const Color accent = Color(0xFFF24236);      // Orange
-  
+  static const Color primary = Color(0xFF6F4E9C);     // Milka-Lila (mittel)
+  static const Color secondary = Color(0xFFFFD700);   // Goldgelb (wie auf Milka-Packung)
+  static const Color accent = Color(0xFF4A2C70);      // Dunkleres Lila für Akzente
+
   // Hintergrundfarben
   static const Color background = Color(0xFFFFFFFF);  // Weiß
-  static const Color cardBackground = Color(0xFFF8F9FA); // Sehr helles Grau
-  
+  static const Color cardBackground = Color(0xFFF9F5FF); // Sehr helles Lila als Hintergrund
+
   // Textfarben
-  static const Color textPrimary = Color(0xFF333333); // Dunkelgrau
-  static const Color textSecondary = Color(0xFF666666); // Mittelgrau
-  static const Color textDisabled = Color(0xFF999999); // Hellgrau
+  static const Color textPrimary = Color(0xFF212121); // Dunkelgrau
+  static const Color textSecondary = Color(0xFF757575); // Mittelgrau
+  static const Color textDisabled = Color(0xFFBDBDBD); // Hellgrau
 
   // Statusfarben
-  static const Color success = Color(0xFF4CAF50);     // Grün
-  static const Color warning = Color(0xFFFF9800);     // Orange
-  static const Color error = Color(0xFFF44336);       // Rot
+  static const Color success = Color(0xFF4CAF50);     // Grün für günstiger
+  static const Color warning = Color(0xFFFF9800);     // Orange für Aufschläge
+  static const Color error = Color(0xFFF44336);       // Rot für Fehler
 }
 
 class AppTypography {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// Falls du Google Fonts nutzen willst:
+// import 'package:google_fonts/google_fonts.dart';
 import 'app_theme.dart';
 
 class AppThemeConfig {
@@ -18,13 +20,15 @@ class AppThemeConfig {
     ),
     colorScheme: ColorScheme.light(
       primary: AppColors.primary,
-      secondary: AppColors.accent,
+      secondary: AppColors.secondary, // Jetzt mit neuem Akzent (Orange)
       surface: AppColors.cardBackground,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
       onSurface: AppColors.textPrimary,
       error: AppColors.error,
     ),
+    // Optional: Falls du Google Fonts verwendest:
+    // textTheme: GoogleFonts.interTextTheme(
     textTheme: TextTheme(
       headlineLarge: TextStyle(
         fontSize: AppTypography.headline1,
@@ -61,7 +65,7 @@ class AppThemeConfig {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.accent,
+        backgroundColor: AppColors.secondary, // Orange-Button
         foregroundColor: Colors.white,
         textStyle: const TextStyle(
           fontSize: AppTypography.body,
@@ -76,7 +80,7 @@ class AppThemeConfig {
         ),
       ),
     ),
-    cardTheme: CardThemeData( // ✅ Verwenden Sie CardThemeData, nicht CardTheme
+    cardTheme: CardThemeData(
       color: AppColors.cardBackground,
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -103,7 +107,7 @@ class AppThemeConfig {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.medium),
         borderSide: BorderSide(
-          color: AppColors.primary,
+          color: AppColors.primary, // Grün bei Fokus
           width: 2.0,
         ),
       ),

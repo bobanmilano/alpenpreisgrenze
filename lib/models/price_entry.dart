@@ -1,6 +1,8 @@
 // lib/models/price_entry.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_price_tracker_app/models/product.dart';
+// --- NEU: Importiere die Hilfsfunktion ---
+import 'package:my_price_tracker_app/utils/string_utils.dart';
 
 class PriceEntry {
   final String id; // Dokument-ID in Firestore
@@ -64,10 +66,16 @@ class PriceEntry {
     };
   }
 
-    Product toProduct() {
+  // --- NEU: Getter für "schön formatierte" Strings ---
+  String get displayName => toProperCase(productName);
+  String get displayStore => toProperCase(store);
+  String get displayCity => toProperCase(city);
+  // --- ENDE NEU ---
+
+  Product toProduct() {
     return Product(
       barcode: barcode,
-      productName: productName,
+      productName: productName, // oder displayName, wenn du es immer schön haben willst
       brands: brands,
       quantity: quantity,
       imageUrl: productImageURL,

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_price_tracker_app/screens/add_price_screen.dart';
 import 'package:my_price_tracker_app/theme/app_theme.dart';
+import 'package:my_price_tracker_app/utils/string_utils.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -17,14 +18,18 @@ import '../widgets/info_message.dart';
 import '../widgets/price_card.dart';
 import 'package:flutter_image_gallery_saver/flutter_image_gallery_saver.dart';
 // Importiere das Theme, falls AppSpacing verwendet wird
-import 'package:my_price_tracker_app/theme/app_theme_config.dart'; 
+import 'package:my_price_tracker_app/theme/app_theme_config.dart';
 
 class ComparisonScreen extends StatefulWidget {
   final Product product;
-  final bool fromScan; // Parameter, um zu kennzeichnen, ob der Screen über einen Scan aufgerufen wurde
+  final bool
+  fromScan; // Parameter, um zu kennzeichnen, ob der Screen über einen Scan aufgerufen wurde
 
-  const ComparisonScreen({Key? key, required this.product, this.fromScan = false})
-      : super(key: key);
+  const ComparisonScreen({
+    Key? key,
+    required this.product,
+    this.fromScan = false,
+  }) : super(key: key);
 
   @override
   _ComparisonScreenState createState() => _ComparisonScreenState();
@@ -49,7 +54,8 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   Future<void> _loadUserId() async {
     try {
       setState(() {
-        _userId = _firebaseService.getCurrentUserId(); // Verwende die neue Methode
+        _userId = _firebaseService
+            .getCurrentUserId(); // Verwende die neue Methode
       });
     } catch (e) {
       print('Fehler beim Abrufen der Benutzer-ID: $e');
@@ -76,8 +82,10 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
       final atPriceValue = atPrice.price;
       final dePriceValue = dePrice.price;
-      final atStore = atPrice.store ?? 'Unbekannt';
-      final deStore = dePrice.store ?? 'Unbekannt';
+      // --- NEU: Verwende die display-Getter ---
+      final atStore = atPrice.displayStore; // <--- Statt atPrice.store
+      final deStore = dePrice.displayStore; // <--- Statt dePrice.store
+      // --- ENDE NEU ---
 
       showDialog(
         context: context,
@@ -85,8 +93,8 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           title: Text('Neuen Preis hinzufügen?'),
           content: Text(
             'Für dieses Produkt existieren bereits aktuelle Preise:\n\n'
-            'Höchster Preis in Österreich: €${atPriceValue.toStringAsFixed(2)} (${atStore})\n'
-            'Niedrigster Preis in Deutschland: €${dePriceValue.toStringAsFixed(2)} (${deStore})\n\n'
+            'Höchster Preis in Österreich: €${atPriceValue.toStringAsFixed(2)} (${atStore})\n' // <--- atStore
+            'Niedrigster Preis in Deutschland: €${dePriceValue.toStringAsFixed(2)} (${deStore})\n\n' // <--- deStore
             'Bitte füge nur einen neuen Preis hinzu, wenn du den aktuellen Österreich-Aufschlag übertreffen möchtest, '
             'also die Preisdifferenz zum deutschen Preis noch größer ist.',
           ),
@@ -164,16 +172,26 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
     PriceEntry dePrice,
   ) async {
     try {
-      // Überprüfen, ob der österreichische Shop bekannt ist
-      if (atPrice.store == null || atPrice.store!.isEmpty) {
+      // --- NEU: Verwende den displayStore für die E-Mail-Adresse ---
+      // Prüfen, ob der österreichische Shop bekannt ist (verwende displayStore)
+      if (atPrice.displayStore.isEmpty) {
+        // <--- Prüfe displayStore statt store
         throw Exception('Der österreichische Shop ist unbekannt.');
       }
 
-      // Laden der Support-E-Mail-Adresse für den Shop
+      // Laden der Support-E-Mail-Adresse für den Shop (verwende displayStore)
       final emailMap = await _firebaseService.getSupportEmails().first;
-      final supportEmail = emailMap[atPrice.store];
+      print(emailMap);
+      // Hier musst du wahrscheinlich die Keys in deiner 'supportemails'-Collection auch in Kleinbuchstaben haben
+      // und die Suche erfolgt über den Rohdatenwert 'store'. Falls du die Keys in Kleinbuchstaben hast,
+      // kannst du hier weiterhin 'atPrice.store' verwenden, um die E-Mail-Adresse zu finden.
+      // Die Anzeige im 'Salutation' der E-Mail soll aber schön sein.
+      final supportEmail =
+          emailMap[atPrice.displayStore];
       if (supportEmail == null) {
-        throw Exception('Keine E-Mail-Adresse für ${atPrice.store} gefunden.');
+        throw Exception(
+          'Keine E-Mail-Adresse für ${atPrice.displayStore} gefunden.',
+        ); // <--- Zeige displayStore an
       }
 
       // Laden der E-Mail-Vorlage
@@ -202,13 +220,14 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       final displayUnit = getDisplayUnit(atProductWeight) ?? 'Stück';
       final percentageDiffText =
           atPricePerUnit != null && dePricePerUnit != null
-              ? '${percentageDiff.abs().toStringAsFixed(2)} % höher (pro $displayUnit)'
-              : '${percentageDiff.abs().toStringAsFixed(2)} % höher';
+          ? '${percentageDiff.abs().toStringAsFixed(2)} % höher (pro $displayUnit)'
+          : '${percentageDiff.abs().toStringAsFixed(2)} % höher';
 
       // Aufbau der E-Mail
       final emailBody = _buildEmailBody(
         emailTemplate,
-        atPrice.store!,
+        atPrice
+            .displayStore, // <--- Verwende displayStore für die Anzeige in der E-Mail
         atPrice.price,
         dePrice.price,
         atProductWeight,
@@ -235,7 +254,8 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
   String _buildEmailBody(
     Map<String, String>? emailTemplate,
-    String store,
+    String
+    store, // <--- Dieser Parameter ist jetzt bereits der 'schöne' Name, z.B. aus _sendComplaintEmail
     double atPriceValue,
     double dePriceValue,
     String atProductWeight,
@@ -265,19 +285,25 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
     // Aufbau der E-Mail
     return [
-      emailTemplate?['salutation']?.replaceAll('\$store', store),
-      emailTemplate?['bodyprice']
-          ?.replaceAll('\$productName', widget.product.productName ?? '')
-          ?.replaceAll('\$atPriceText', atPriceText)
-          ?.replaceAll('\$dePriceText', dePriceText)
-          ?.replaceAll('\$percentageDiffText', percentageDiffText),
-      if (isShrinkflationDetected) // Nur hinzufügen, wenn Shrinkflation erkannt wurde
-        emailTemplate?['bodyshrinkflation']
-            ?.replaceAll('\$atProductWeight', atProductWeight)
-            ?.replaceAll('\$deProductWeight', deProductWeight),
-      emailTemplate?['bodycomplaint'],
-      emailTemplate?['greeting'],
-    ]
+          emailTemplate?['salutation']?.replaceAll(
+            '\$store',
+            store,
+          ), // <--- 'store' ist jetzt bereits der 'schöne' Name
+          emailTemplate?['bodyprice']
+              ?.replaceAll(
+                '\$productName',
+                widget.product.productName ?? '',
+              ) // <--- Hier kannst du auch den display-Namen des Produkts verwenden, wenn du ihn hast
+              ?.replaceAll('\$atPriceText', atPriceText)
+              ?.replaceAll('\$dePriceText', dePriceText)
+              ?.replaceAll('\$percentageDiffText', percentageDiffText),
+          if (isShrinkflationDetected) // Nur hinzufügen, wenn Shrinkflation erkannt wurde
+            emailTemplate?['bodyshrinkflation']
+                ?.replaceAll('\$atProductWeight', atProductWeight)
+                ?.replaceAll('\$deProductWeight', deProductWeight),
+          emailTemplate?['bodycomplaint'],
+          emailTemplate?['greeting'],
+        ]
         .where((part) => part != null) // Entferne null-Werte
         .join('\n\n'); // Füge die Teile mit Zeilenumbrüchen zusammen
   }
@@ -412,7 +438,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   Widget build(BuildContext context) {
     // Berechne die maximale Höhe für die erste Karte
     final maxHeight = MediaQuery.of(context).size.height / 3;
-
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('Preisvergleich'),
@@ -422,192 +448,229 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        child: Screenshot(
-          controller: _screenshotController,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Produktinformationen - Höhe begrenzt
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: maxHeight,
-                ),
-                child: Card(
-                  // Reduzierter äußerer Rand
-                  margin: EdgeInsets.all(AppSpacing.s), // z.B. 4.0
-                  child: Padding(
-                    // Reduziertes Padding innerhalb der Karte
-                    padding: EdgeInsets.all(AppSpacing.s), // z.B. 8.0
-                    child: Column(
-                      children: [
-                        if (widget.product.imageUrl != null)
-                          Expanded( // Bild nimmt verfügbaren Platz innerhalb der Höhe ein
-                            child: Image.network(
-                              widget.product.imageUrl!,
-                              fit: BoxFit.contain, // Bild passt sich an den Container an
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.image_not_supported, size: 100);
-                              },
-                            ),
-                          ),
-                        if (widget.product.imageUrl == null) // Falls kein Bild, Icon anzeigen
-                          Icon(Icons.image_not_supported, size: 100),
-                        // Reduzierter Abstand zum Text
-                        SizedBox(height: AppSpacing.s), // z.B. 4.0
-                        Text(
-                          widget.product.productName ?? 'Kein Name',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          'Hersteller: ${widget.product.brands ?? 'N/A'}',
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          'Menge: ${widget.product.quantity ?? 'N/A'}',
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // Reduzierter Abstand zur nächsten Komponente
-              SizedBox(height: AppSpacing.s), // z.B. 4.0
-              StreamBuilder<List<PriceEntry>>(
-                stream: _firebaseService.getAllPriceEntriesForBarcode(
-                  widget.product.barcode!,
-                ),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Text('Fehler: ${snapshot.error}');
-                  }
-
-                  final allPrices = snapshot.data ?? [];
-                  final now = DateTime.now();
-                  final oneMonthAgo = now.subtract(Duration(days: 365));
-
-                  // Filtere nur aktuelle Preise
-                  final filteredPrices = allPrices
-                      .where((price) => price.timestamp.isAfter(oneMonthAgo))
-                      .toList();
-
-                  // Sortiere AT-Preise nach Preis absteigend (höchster Preis zuerst)
-                  final atPrices =
-                      filteredPrices
-                          .where((price) => price.country == 'Österreich')
-                          .toList()
-                        ..sort((a, b) => b.price.compareTo(a.price));
-
-                  // Sortiere DE-Preise nach Preis aufsteigend (niedrigster Preis zuerst)
-                  final dePrices =
-                      filteredPrices
-                          .where((price) => price.country == 'Deutschland')
-                          .toList()
-                        ..sort((a, b) => a.price.compareTo(b.price));
-
-                  // Initialisiere _currentATPrice und _currentDEPrice
-                  // Prüfe hier, *nachdem* die Listen sortiert sind, ob beide existieren
-                  if (_currentATPrice.value == null && atPrices.isNotEmpty) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _currentATPrice.value = atPrices.first;
-                      // Nachdem AT-Preis gesetzt wurde, prüfe auf beide und zeige ggf. Dialog
-                      if (widget.fromScan && _currentATPrice.value != null && _currentDEPrice.value != null && !_dialogShown) {
-                        _showPriceExistsDialog(_currentATPrice.value!, _currentDEPrice.value!);
-                      }
-                    });
-                  }
-                  if (_currentDEPrice.value == null && dePrices.isNotEmpty) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _currentDEPrice.value = dePrices.first;
-                      // Nachdem DE-Preis gesetzt wurde, prüfe auf beide und zeige ggf. Dialog
-                      if (widget.fromScan && _currentATPrice.value != null && _currentDEPrice.value != null && !_dialogShown) {
-                        _showPriceExistsDialog(_currentATPrice.value!, _currentDEPrice.value!);
-                      }
-                    });
-                  }
-
-                  return Column(
-            
-                    children: [
-                      ValueListenableBuilder<PriceEntry?>(
-                        valueListenable: _currentATPrice,
-                        builder: (context, atPrice, _) {
-                          return ValueListenableBuilder<PriceEntry?>(
-                            valueListenable: _currentDEPrice,
-                            builder: (context, dePrice, _) {
-                              if (atPrice == null || dePrice == null) {
-                                return InfoMessage(allPrices: filteredPrices);
-                              }
-                              return InfoMessage(allPrices: [atPrice, dePrice]);
-                            },
-                          );
-                        },
-                      ),
-                      // Reduzierter Abstand zu den PriceCards
-                      SizedBox(height: AppSpacing.s), // z.B. 4.0
-                      Row(
+        child: Container(
+          // <-- Dieses Container-Widget ...
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              // <-- ... hat diesen Verlauf als Dekoration
+              begin: Alignment.topCenter, // Startpunkt: Oben
+              end: Alignment.bottomCenter, // Endpunkt: Unten
+              colors: [
+                theme.colorScheme.primaryContainer.withOpacity(
+                  0.2,
+                ), // Lila (leicht transparent)
+                theme.colorScheme.background, // Weiß (oder Hintergrundfarbe)
+              ],
+            ),
+          ),
+          child: Screenshot(
+            controller: _screenshotController,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Produktinformationen - Höhe begrenzt
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxHeight),
+                  child: Card(
+                    // Reduzierter äußerer Rand
+                    margin: EdgeInsets.all(AppSpacing.s), // z.B. 4.0
+                    child: Padding(
+                      // Reduziertes Padding innerhalb der Karte
+                      padding: EdgeInsets.all(AppSpacing.s), // z.B. 8.0
+                      child: Column(
                         children: [
-                          Expanded(
-                            child: PriceCard(
-                              key: ValueKey('AT_PriceCard'),
-                              title: 'Österreich',
-                              targetCountry: 'Österreich',
-                              barcode: widget.product.barcode!,
-                              userId: _userId,
-                              userPriceStream: _firebaseService
-                                  .getPriceEntriesForUserForBarcode(
-                                    _userId,
-                                    widget.product.barcode!,
-                                  ),
-                              cheapestOtherPriceStream: _firebaseService
-                                  .getCheapestPriceInGermanyForBarcode(
-                                    widget.product.barcode!,
-                                  ),
-                              onNavigate: (fn) => fn(),
-                              allPricesStream: _firebaseService
-                                  .getAllPriceEntriesForBarcode(
-                                    widget.product.barcode!,
-                                  ),
-                              firebaseService: _firebaseService,
-                              onPriceChanged: _updateCurrentATPrice,
+                          if (widget.product.imageUrl != null)
+                            Expanded(
+                              // Bild nimmt verfügbaren Platz innerhalb der Höhe ein
+                              child: Image.network(
+                                widget.product.imageUrl!,
+                                fit: BoxFit
+                                    .contain, // Bild passt sich an den Container an
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    Icons.image_not_supported,
+                                    size: 100,
+                                  );
+                                },
+                              ),
                             ),
+                          if (widget.product.imageUrl ==
+                              null) // Falls kein Bild, Icon anzeigen
+                            Icon(Icons.image_not_supported, size: 100),
+                          // Reduzierter Abstand zum Text
+                          SizedBox(height: AppSpacing.s), // z.B. 4.0
+                          Text(
+                            widget.product.productName ?? 'Kein Name',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                            textAlign: TextAlign.center,
                           ),
-                          Expanded(
-                            child: PriceCard(
-                              key: ValueKey('DE_PriceCard'),
-                              title: 'Deutschland',
-                              targetCountry: 'Deutschland',
-                              barcode: widget.product.barcode!,
-                              userId: _userId,
-                              userPriceStream: _firebaseService
-                                  .getPriceEntriesForUserForBarcode(
-                                    _userId,
-                                    widget.product.barcode!,
-                                  ),
-                              cheapestOtherPriceStream: _firebaseService
-                                  .getCheapestPriceInGermanyForBarcode(
-                                    widget.product.barcode!,
-                                  ),
-                              onNavigate: (fn) => fn(),
-                              allPricesStream: _firebaseService
-                                  .getAllPriceEntriesForBarcode(
-                                    widget.product.barcode!,
-                                  ),
-                              firebaseService: _firebaseService,
-                              onPriceChanged: _updateCurrentDEPrice,
-                            ),
+                          Text(
+                            'Hersteller: ${widget.product.brands ?? 'N/A'}',
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            'Menge: ${widget.product.quantity ?? 'N/A'}',
+                            textAlign: TextAlign.center,
+                          ),
+                              Text(
+                            'Barcode: ${widget.product.barcode ?? 'N/A'}',
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
-                    ],
-                  );
-                },
-              ),
-            ],
+                    ),
+                  ),
+                ),
+                // Reduzierter Abstand zur nächsten Komponente
+                SizedBox(height: AppSpacing.s), // z.B. 4.0
+                StreamBuilder<List<PriceEntry>>(
+                  stream: _firebaseService.getAllPriceEntriesForBarcode(
+                    widget.product.barcode!,
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Text('Fehler: ${snapshot.error}');
+                    }
+
+                    final allPrices = snapshot.data ?? [];
+                    final now = DateTime.now();
+                    final oneMonthAgo = now.subtract(Duration(days: 365));
+
+                    // Filtere nur aktuelle Preise
+                    final filteredPrices = allPrices
+                        .where((price) => price.timestamp.isAfter(oneMonthAgo))
+                        .toList();
+
+                    // Sortiere AT-Preise nach Preis absteigend (höchster Preis zuerst)
+                    final atPrices =
+                        filteredPrices
+                            .where((price) => price.country == 'Österreich')
+                            .toList()
+                          ..sort((a, b) => b.price.compareTo(a.price));
+
+                    // Sortiere DE-Preise nach Preis aufsteigend (niedrigster Preis zuerst)
+                    final dePrices =
+                        filteredPrices
+                            .where((price) => price.country == 'Deutschland')
+                            .toList()
+                          ..sort((a, b) => a.price.compareTo(b.price));
+
+                    // Initialisiere _currentATPrice und _currentDEPrice
+                    // Prüfe hier, *nachdem* die Listen sortiert sind, ob beide existieren
+                    if (_currentATPrice.value == null && atPrices.isNotEmpty) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _currentATPrice.value = atPrices.first;
+                        // Nachdem AT-Preis gesetzt wurde, prüfe auf beide und zeige ggf. Dialog
+                        if (widget.fromScan &&
+                            _currentATPrice.value != null &&
+                            _currentDEPrice.value != null &&
+                            !_dialogShown) {
+                          _showPriceExistsDialog(
+                            _currentATPrice.value!,
+                            _currentDEPrice.value!,
+                          );
+                        }
+                      });
+                    }
+                    if (_currentDEPrice.value == null && dePrices.isNotEmpty) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _currentDEPrice.value = dePrices.first;
+                        // Nachdem DE-Preis gesetzt wurde, prüfe auf beide und zeige ggf. Dialog
+                        if (widget.fromScan &&
+                            _currentATPrice.value != null &&
+                            _currentDEPrice.value != null &&
+                            !_dialogShown) {
+                          _showPriceExistsDialog(
+                            _currentATPrice.value!,
+                            _currentDEPrice.value!,
+                          );
+                        }
+                      });
+                    }
+
+                    return Column(
+                      children: [
+                        ValueListenableBuilder<PriceEntry?>(
+                          valueListenable: _currentATPrice,
+                          builder: (context, atPrice, _) {
+                            return ValueListenableBuilder<PriceEntry?>(
+                              valueListenable: _currentDEPrice,
+                              builder: (context, dePrice, _) {
+                                if (atPrice == null || dePrice == null) {
+                                  return InfoMessage(allPrices: filteredPrices);
+                                }
+                                return InfoMessage(
+                                  allPrices: [atPrice, dePrice],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                        // Reduzierter Abstand zu den PriceCards
+                        SizedBox(height: AppSpacing.s), // z.B. 4.0
+                        Row(
+                          children: [
+                            Expanded(
+                              child: PriceCard(
+                                key: ValueKey('AT_PriceCard'),
+                                title: 'Österreich',
+                                targetCountry: 'Österreich',
+                                barcode: widget.product.barcode!,
+                                userId: _userId,
+                                userPriceStream: _firebaseService
+                                    .getPriceEntriesForUserForBarcode(
+                                      _userId,
+                                      widget.product.barcode!,
+                                    ),
+                                cheapestOtherPriceStream: _firebaseService
+                                    .getCheapestPriceInGermanyForBarcode(
+                                      widget.product.barcode!,
+                                    ),
+                                onNavigate: (fn) => fn(),
+                                allPricesStream: _firebaseService
+                                    .getAllPriceEntriesForBarcode(
+                                      widget.product.barcode!,
+                                    ),
+                                firebaseService: _firebaseService,
+                                onPriceChanged: _updateCurrentATPrice,
+                              ),
+                            ),
+                            Expanded(
+                              child: PriceCard(
+                                key: ValueKey('DE_PriceCard'),
+                                title: 'Deutschland',
+                                targetCountry: 'Deutschland',
+                                barcode: widget.product.barcode!,
+                                userId: _userId,
+                                userPriceStream: _firebaseService
+                                    .getPriceEntriesForUserForBarcode(
+                                      _userId,
+                                      widget.product.barcode!,
+                                    ),
+                                cheapestOtherPriceStream: _firebaseService
+                                    .getCheapestPriceInGermanyForBarcode(
+                                      widget.product.barcode!,
+                                    ),
+                                onNavigate: (fn) => fn(),
+                                allPricesStream: _firebaseService
+                                    .getAllPriceEntriesForBarcode(
+                                      widget.product.barcode!,
+                                    ),
+                                firebaseService: _firebaseService,
+                                onPriceChanged: _updateCurrentDEPrice,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -621,7 +684,9 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
           if (atPrice == null || dePrice == null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Nicht genügend Daten zum Teilen verfügbar.')),
+              SnackBar(
+                content: Text('Nicht genügend Daten zum Teilen verfügbar.'),
+              ),
             );
             return;
           }

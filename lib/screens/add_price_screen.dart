@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Hinzugefügt für Auth-Check
 
 class AddPriceScreen extends StatefulWidget {
   final String barcode;
@@ -281,6 +282,19 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
 
   Future<String?> _uploadImage(File imageFile) async {
     try {
+      print("DEBUG: _uploadImage Methode gestartet.");
+      // --- Neuer Debug-Check ---
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print(
+          "DEBUG: Kein authentifizierter Benutzer zum Zeitpunkt des Uploads!",
+        );
+        return null; // oder handle den Fehler wie gewünscht
+      } else {
+        print("DEBUG: Authentifizierter Benutzer UID: ${user.uid}");
+      }
+      // --- Ende neuer Debug-Check ---
+
       if (!imageFile.existsSync()) {
         print('Fehler: Die Datei zum Hochladen existiert nicht.');
         return null;
@@ -296,221 +310,281 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
           '${DateTime.now().millisecondsSinceEpoch}_${scaledImage.path.split('/').last}';
       String filePath = 'product_images/${widget.barcode}/$fileName';
 
+      print("DEBUG: Versuche, Bild hochzuladen unter: $filePath");
       try {
         await _storage.ref(filePath).putFile(scaledImage);
+        print("DEBUG: putFile erfolgreich abgeschlossen.");
         String downloadURL = await _storage.ref(filePath).getDownloadURL();
-        print('Bild erfolgreich hochgeladen: $downloadURL');
+        print(
+          "DEBUG: getDownloadURL erfolgreich abgeschlossen. URL: $downloadURL",
+        );
         return downloadURL;
       } catch (e) {
-        print('Fehler beim Hochladen des Bildes: $e');
+        print('Fehler beim Hochladen des Bildes (putFile/getDownloadURL): $e');
+        print('Stack trace: ');
+        print(e.toString());
         return null;
       }
     } catch (e) {
-      print('Fehler beim Verarbeiten des Bildes: $e');
+      print('Fehler beim Verarbeiten des Bildes (äußerer Catch): $e');
       return null;
     }
   }
 
-  Future<void> _savePrice() async {
-    if (_isSaving) return;
+  // lib/screens/add_price_screen.dart
+// ... (anderer Code) ...
 
-    // ✅ Zustand sofort ändern, bevor Validierung startet
-    setState(() {
-      _isSaving = true;
-    });
+Future<void> _savePrice() async {
+  if (_isSaving) return;
 
-    try {
-      // Grundlegende Validierungen
-      if (_priceController.text.isEmpty) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Bitte gib einen Preis ein.')));
-        setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
-        });
-        return;
-      }
+  // ✅ Zustand sofort ändern, bevor Validierung startet
+  setState(() {
+    _isSaving = true;
+  });
 
-      if (_quantityController.text.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Bitte gib eine Menge ein (z.B. 400g).')),
-        );
-        setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
-        });
-        return;
-      }
-
-      if (_cityController.text.isEmpty ||
-          _selectedCountry == null ||
-          _selectedStore == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Bitte fülle alle Standortfelder aus.')),
-        );
-        setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
-        });
-        return;
-      }
-
-      double price;
-      try {
-        price = double.parse(_priceController.text.replaceAll(',', '.'));
-      } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ungültiger Preis-Format.')));
-        setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
-        });
-        return;
-      }
-
-      String quantity = _quantityController.text.trim();
-      if (quantity.isEmpty) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Menge kann nicht leer sein.')));
-        setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
-        });
-        return;
-      }
-
-      if (_product == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Produktinformationen nicht verfügbar.')),
-        );
-        setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
-        });
-        return;
-      }
-
-      // ✅ Überprüfe, ob bereits ein Eintrag existiert
-      final existingPriceEntry = await _firebaseService
-          .getPriceEntryByUniqueKey(
-            widget.barcode,
-            _selectedCountry!,
-            _selectedStore!,
-            quantity,
-          );
-
-      if (existingPriceEntry != null) {
-        final existingPrice = existingPriceEntry.price;
-        final existingTimestamp = existingPriceEntry.timestamp;
-
-        // Prüfe, ob der Eintrag älter als 6 Monate ist
-        final sixMonthsAgo = DateTime.now().subtract(Duration(days: 183));
-        final isOlderThanSixMonths = existingTimestamp.isBefore(sixMonthsAgo);
-
-        // Ausnahmen für AT und DE
-        bool canOverride = false;
-        if (_selectedCountry == 'Österreich' && price > existingPrice) {
-          canOverride = true; // AT: Neuer Preis ist höher
-        } else if (_selectedCountry == 'Deutschland' && price < existingPrice) {
-          canOverride = true; // DE: Neuer Preis ist niedriger
-        }
-
-        if (!isOlderThanSixMonths && !canOverride) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Für dieses Produkt bei ${_selectedStore!} in ${_selectedCountry!} ist bereits ein Eintrag vorhanden. Preis darf nicht überschrieben werden.',
-              ),
-            ),
-          );
-          setState(() {
-            _isSaving = false; // ✅ Zustand zurücksetzen
-          });
-          return;
-        }
-      }
-
-      // ✅ Nur wenn der Eintrag gemacht werden kann, fortfahren mit dem Bildupload
-      if (_selectedImage == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Bitte gib ein Bild (Kamera, Galerie) an.')),
-        );
-        setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
-        });
-        return;
-      }
-
-      // ✅ Zeige Status: Bild wird hochgeladen
+  try {
+    // Grundlegende Validierungen
+    if (_priceController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Bild wird hochgeladen...')));
-      String? productImageURL = await _uploadImage(_selectedImage!);
-      if (productImageURL == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Fehler beim Hochladen des Bildes.')),
-          );
-        }
-        setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
-        });
-        return;
-      }
+      ).showSnackBar(SnackBar(content: Text('Bitte gib einen Preis ein.')));
+      setState(() {
+        _isSaving = false; // ✅ Zustand zurücksetzen
+      });
+      return;
+    }
 
-      // ✅ Zeige Status: Preis wird gespeichert
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Preis wird gespeichert...')));
-
-      final newPriceEntry = PriceEntry(
-        id: '',
-        barcode: widget.barcode,
-        productName: _product!.productName ?? 'Unbekannt',
-        brands: _product!.brands,
-        quantity: quantity,
-        price: price,
-        userId: _userId,
-        city: _cityController.text.trim(),
-        country: _selectedCountry!,
-        store: _selectedStore!,
-        productImageURL: productImageURL, // ✅ Nur einmal hochgeladen
-        timestamp: DateTime.now(),
+    if (_quantityController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bitte gib eine Menge ein (z.B. 400g).')),
       );
+      setState(() {
+        _isSaving = false; // ✅ Zustand zurücksetzen
+      });
+      return;
+    }
 
-      final savedId = await _firebaseService.savePriceEntry(newPriceEntry);
-      if (savedId != null) {
-        String message = 'Preis erfolgreich gespeichert!';
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
-          await Future.delayed(Duration(seconds: 1));
-          Navigator.pop(context);
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Für dieses Produkt bei ${_selectedStore!} in ${_selectedCountry!} ist bereits ein Eintrag vorhanden. Preis darf nicht überschrieben werden.',
-              ),
-            ),
-          );
-        }
-      }
+    if (_cityController.text.isEmpty ||
+        _selectedCountry == null ||
+        _selectedStore == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bitte fülle alle Standortfelder aus.')),
+      );
+      setState(() {
+        _isSaving = false; // ✅ Zustand zurücksetzen
+      });
+      return;
+    }
+
+    double price;
+    try {
+      price = double.parse(_priceController.text.replaceAll(',', '.'));
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Fehler beim Speichern: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Ungültiger Preis-Format.')));
+      setState(() {
+        _isSaving = false; // ✅ Zustand zurücksetzen
+      });
+      return;
+    }
+
+    // --- NICHT normalisieren: quantity, country, barcode ---
+    String quantity = _quantityController.text.trim();
+    String country = _selectedCountry!;
+    String barcode = widget.barcode;
+    // --- ENDE ---
+
+    if (quantity.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Menge kann nicht leer sein.')));
+      setState(() {
+        _isSaving = false; // ✅ Zustand zurücksetzen
+      });
+      return;
+    }
+
+    if (_product == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Produktinformationen nicht verfügbar.')),
+      );
+      setState(() {
+        _isSaving = false; // ✅ Zustand zurücksetzen
+      });
+      return;
+    }
+
+    // --- Normalisieren für Speicherung und Duplikatsprüfung (nur store!) ---
+    String normalizedStore = _selectedStore!.toLowerCase();
+    String normalizedCity = _cityController.text.trim().toLowerCase();
+    String normalizedProductName = (_product!.productName ?? 'Unbekannt').toLowerCase();
+    String? normalizedBrands = _product!.brands?.toLowerCase();
+    // --- ENDE ---
+
+    // ✅ Überprüfe, ob bereits ein Eintrag existiert - mit normalisiertem 'store'
+    final existingPriceEntry = await _firebaseService
+        .getPriceEntryByUniqueKey(
+          barcode, // NICHT normalisiert
+          country, // NICHT normalisiert
+          normalizedStore, // <-- Normalisiert, weil in DB als Kleinbuchstaben gespeichert
+          quantity, // NICHT normalisiert
+        );
+
+    // --- NEU: Logik für das Überschreiben (Löschen & Neu-Anlegen) ---
+    bool shouldOverride = false;
+    String? existingDocId = null;
+
+    if (existingPriceEntry != null) {
+      final existingPrice = existingPriceEntry.price;
+      final existingTimestamp = existingPriceEntry.timestamp;
+
+      // Prüfe, ob der Eintrag älter als 6 Monate ist
+      final sixMonthsAgo = DateTime.now().subtract(Duration(days: 183));
+      final isOlderThanSixMonths = existingTimestamp.isBefore(sixMonthsAgo);
+
+      // Ausnahmen für AT und DE
+      bool canOverride = false;
+      if (country == 'Österreich' && price > existingPrice) { // country NICHT normalisiert
+        canOverride = true; // AT: Neuer Preis ist höher
+      } else if (country == 'Deutschland' && price < existingPrice) { // country NICHT normalisiert
+        canOverride = true; // DE: Neuer Preis ist niedriger
       }
-    } finally {
-      // ✅ Zustand am Ende zurücksetzen
-      if (mounted) {
+
+      // Falls Überschreiben *nicht* erlaubt (z.B. niedriger Preis in AT)
+      if (!isOlderThanSixMonths && !canOverride) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Für dieses Produkt bei ${_selectedStore!} in ${_selectedCountry!} ist bereits ein Eintrag vorhanden. Preis darf nicht überschrieben werden.',
+            ),
+          ),
+        );
         setState(() {
-          _isSaving = false;
+          _isSaving = false; // ✅ Zustand zurücksetzen
         });
+        return;
+      }
+
+      // Falls Überschreiben *erlaubt* ist (z.B. höherer Preis in AT oder älter als 6 Monate)
+      if (isOlderThanSixMonths || canOverride) {
+        shouldOverride = true;
+        existingDocId = existingPriceEntry.id; // Hole die ID des bestehenden Dokuments
       }
     }
+    // --- ENDE NEU ---
+
+    // ✅ Nur wenn der Eintrag gemacht werden kann (und ggf. alter gelöscht wurde), fortfahren mit dem Bildupload
+    if (_selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Bitte gib ein Bild (Kamera, Galerie) an.')),
+      );
+      setState(() {
+        _isSaving = false; // ✅ Zustand zurücksetzen
+      });
+      return;
+    }
+
+    // ✅ Zeige Status: Bild wird hochgeladen
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Bild wird hochgeladen...')));
+    String? productImageURL = await _uploadImage(_selectedImage!);
+    if (productImageURL == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler beim Hochladen des Bildes.')),
+        );
+      }
+      setState(() {
+        _isSaving = false; // ✅ Zustand zurücksetzen
+      });
+      return;
+    }
+
+    // ✅ Zeige Status: Preis wird gespeichert
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Preis wird gespeichert...')));
+
+    // ✅ Erstelle das neue Preis-Objekt mit den korrekten Werten
+    //     - NICHT-normalisierte Werte für barcode, country, quantity
+    //     - Normalisierte Werte für city, store, productName, brands
+    final newPriceEntry = PriceEntry(
+      id: '',
+      barcode: barcode, // NICHT normalisiert
+      productName: normalizedProductName, // <- Verwende den normalisierten Wert
+      brands: normalizedBrands,           // <- Optional, aber normalisiert
+      quantity: quantity,                 // <- NICHT normalisiert
+      price: price,
+      userId: _userId,
+      city: normalizedCity,               // <- Verwende den normalisierten Wert
+      country: country,                   // <- NICHT normalisiert
+      store: normalizedStore,             // <- Verwende den normalisierten Wert
+      productImageURL: productImageURL,
+      timestamp: DateTime.now(),
+    );
+
+    // --- NEU: Falls Überschreiben aktiviert, lösche zuerst den alten Eintrag ---
+    if (shouldOverride && existingDocId != null) {
+      try {
+        await _firebaseService.deletePriceEntryById(existingDocId);
+        print("DEBUG: Altes Preis-Dokument gelöscht: $existingDocId");
+      } catch (e) {
+        print("Fehler beim Löschen des alten Preis-Eintrags: $e");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Fehler beim Löschen des alten Eintrags: $e')),
+          );
+        }
+        setState(() {
+          _isSaving = false; // ✅ Zustand zurücksetzen
+        });
+        return;
+      }
+    }
+    // --- ENDE NEU ---
+
+    // ✅ Speichere das neue Preis-Objekt
+    final savedId = await _firebaseService.savePriceEntry(newPriceEntry);
+    if (savedId != null) {
+      String message = 'Preis erfolgreich gespeichert!';
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+        await Future.delayed(Duration(seconds: 1));
+        Navigator.pop(context);
+      }
+    } else {
+      if (mounted) {
+        // Dieser Fall sollte jetzt unwahrscheinlicher sein, da wir vorher prüfen
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Fehler beim Speichern des neuen Preises.',
+            ),
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Fehler beim Speichern: $e')));
+    }
+  } finally {
+    // ✅ Zustand am Ende zurücksetzen
+    if (mounted) {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
+}
+
+// ... (anderer Code) ...
 
   @override
   Widget build(BuildContext context) {

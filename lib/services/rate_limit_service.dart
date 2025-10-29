@@ -16,7 +16,6 @@ class RateLimitService {
       final oneWeekAgo = now.subtract(Duration(days: 7));
       final limits = {
         'canCreatePrice': true,
-        'canSubmitReview': true,
         'canChangeProfileImage': true,
       };
 
@@ -66,12 +65,7 @@ class RateLimitService {
         }
       }
 
-      //TODO remove
-       return {
-        'canSubmitPrice': true,
-        'canChangeProfileImage': true,
-      };
-      //return limits;
+      return limits;
     } catch (e) {
       print('Allgemeiner Fehler in checkUserLimits: $e');
       // Im Zweifel erlauben

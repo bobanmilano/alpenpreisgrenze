@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_price_tracker_app/theme/app_theme.dart';
+import 'package:my_price_tracker_app/utils/string_utils.dart';
 import '../models/price_entry.dart';
 import '../screens/add_price_screen.dart';
 import 'price_content.dart';
@@ -154,6 +155,12 @@ class _PriceCardState extends State<PriceCard>
     );
   }
 
+  String _getDisplayString(String? input, String attributeName) {
+    if (input == null)
+      return '${attributeName} N/A'; // oder wie auch immer du mit null umgehst
+    return toProperCase(input);
+  }
+
   Widget _buildPriceSlider(List<PriceEntry> prices, BuildContext context) {
     return Column(
       children: [
@@ -177,7 +184,7 @@ class _PriceCardState extends State<PriceCard>
               valueListenable: _currentIndex,
               builder: (context, currentIndex, _) {
                 return Text(
-                  prices[currentIndex].city ?? 'Unbekannt', // Falls city null ist
+                  _getDisplayString(prices[currentIndex].city, "Stadt"), // Falls city null ist
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -211,7 +218,10 @@ class _PriceCardState extends State<PriceCard>
               // Pfeile über dem PageView
               // Linker Pfeil - sehr nah am linken Rand
               Align(
-                alignment: Alignment(-1, 0), // x = -0.95, sehr nah am linken Rand
+                alignment: Alignment(
+                  -1,
+                  0,
+                ), // x = -0.95, sehr nah am linken Rand
                 child: ValueListenableBuilder<int>(
                   valueListenable: _currentIndex,
                   builder: (context, currentIndex, _) {
@@ -232,17 +242,20 @@ class _PriceCardState extends State<PriceCard>
                           : Colors.grey.withOpacity(0),
                       padding: EdgeInsets.all(2), // Minimaler Abstand
                       // Optional: Hintergrund für den Button, um ihn besser sichtbar zu machen
-                       style: IconButton.styleFrom(
-                         backgroundColor: Colors.white.withOpacity(0.8),
-                         shape: CircleBorder(),
-                       ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.8),
+                        shape: CircleBorder(),
+                      ),
                     );
                   },
                 ),
               ),
               // Rechter Pfeil - sehr nah am rechten Rand
               Align(
-                alignment: Alignment(1, 0), // x = 0.95, sehr nah am rechten Rand
+                alignment: Alignment(
+                  1,
+                  0,
+                ), // x = 0.95, sehr nah am rechten Rand
                 child: ValueListenableBuilder<int>(
                   valueListenable: _currentIndex,
                   builder: (context, currentIndex, _) {
@@ -263,10 +276,10 @@ class _PriceCardState extends State<PriceCard>
                           : Colors.grey.withOpacity(0),
                       padding: EdgeInsets.all(2), // Minimaler Abstand
                       // Optional: Hintergrund für den Button, um ihn besser sichtbar zu machen
-                       style: IconButton.styleFrom(
-                         backgroundColor: Colors.white.withOpacity(0.8),
-                         shape: CircleBorder(),
-                       ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.8),
+                        shape: CircleBorder(),
+                      ),
                     );
                   },
                 ),

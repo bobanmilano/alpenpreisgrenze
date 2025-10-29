@@ -151,7 +151,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Tippe zum Scannen',
+                  'Tippe um Scan zu starten',
                   style: textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onBackground,

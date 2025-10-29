@@ -45,7 +45,7 @@ Option 1: Direkt per QR-Code (einfachster Weg)
 Scannen Sie den folgenden QR-Code mit der Kamera Ihres Smartphones. Sie werden direkt zum Download der neuesten Version weitergeleitet.
 
 <p align="center">
-<img src="assets/github-release-1.0.3.png" alt="Installations-QR-Code" width="200">
+<img src="assets/github-release-v1.0.4.png" alt="Installations-QR-Code" width="200">
 </p>
 
 Option 2: Manueller Download

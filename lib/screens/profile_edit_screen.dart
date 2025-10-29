@@ -7,8 +7,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_price_tracker_app/services/image_upload_service.dart';
 import 'package:my_price_tracker_app/services/rate_limit_service.dart';
-//import 'package:my_price_tracker_app/services/image_upload_service.dart';
-//import 'package:my_price_tracker_app/services/rate_limit_service.dart';
 import 'package:my_price_tracker_app/theme/app_theme.dart'; // ✅ NEU HINZUGEFÜGT
 
 class ProfileEditScreen extends StatefulWidget {

@@ -1,5 +1,6 @@
 // lib/widgets/product_list_item.dart
 import 'package:flutter/material.dart';
+import 'package:my_price_tracker_app/utils/string_utils.dart';
 
 class ProductListItem extends StatelessWidget {
   final String? productImageUrl;
@@ -67,8 +68,14 @@ class ProductListItem extends StatelessWidget {
     );
   }
 
+  String _getDisplayString(String? input, String attributeName) {
+    if (input == null) return '${attributeName} N/A'; // oder wie auch immer du mit null umgehst
+  return toProperCase(input);
+  }
+
   @override
   Widget build(BuildContext context) {
+    
     return InkWell(
       onTap: onTap,
       child: Card(
@@ -96,7 +103,7 @@ class ProductListItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      productName ?? 'Unbekanntes Produkt',
+                      _getDisplayString(productName, 'Produktname'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text('Hersteller: ${manufacturer ?? 'N/A'}'),
@@ -111,13 +118,16 @@ class ProductListItem extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8), // Kleiner Abstand
-                // In der Row, wo Shop und Stadt angezeigt werden
-Flexible(
-  child: Text(
-    (city != null && city!.isNotEmpty) ? city! : 'N/A', // ✅ Prüft auf null und Leerstring
-    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
-  ),
-),
+                        // In der Row, wo Shop und Stadt angezeigt werden
+                        Flexible(
+                          child: Text(
+                            (city != null && city!.isNotEmpty)
+                                ?   _getDisplayString(city, 'Stadt')!
+                                : 'N/A', // ✅ Prüft auf null und Leerstring
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontStyle: FontStyle.italic),
+                          ),
+                        ),
                       ],
                     ),
                   ],

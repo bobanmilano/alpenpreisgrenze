@@ -7,6 +7,7 @@ import 'package:my_price_tracker_app/screens/comparison_screen.dart';
 import 'package:my_price_tracker_app/services/openfoodfacts_service.dart';
 import 'package:my_price_tracker_app/theme/app_theme.dart';
 import 'package:my_price_tracker_app/theme/app_theme_config.dart'; // Importieren Sie das Theme
+import 'package:my_price_tracker_app/utils/string_utils.dart';
 import 'scan_screen.dart';
 import 'settings_screen.dart';
 import 'scanned_prices_screen.dart'; // Importieren Sie den neuen Screen
@@ -37,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedIndex = index;
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -75,24 +77,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // --- ANPASSUNG: Neuer Inhalt für die Startseite ---
 class _HomePageContent extends StatefulWidget {
-  // Geändert zu StatefulWidget
   @override
   __HomePageContentState createState() => __HomePageContentState();
 }
 
 class __HomePageContentState extends State<_HomePageContent> {
-  // Neuer State
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
-  final FirebaseService _firebaseService =
-      FirebaseService(); // NEU: FirebaseService Instanz
+  final FirebaseService _firebaseService = FirebaseService();
+  bool _isLoadingTopProduct = true;
 
-  // Variablen für den größten Unterschied - Zustandsvariablen
-  String? _topProductBarcode; // <--- NEU: Barcode speichern
+  String? _topProductBarcode;
   String? _topProductName;
   double? _topAtPrice;
   String? _topAtStore;
-  String? _topAtCity; // <--- NEU
-  String? _topAtQuantity; // <--- NEU
+  String? _topAtCity;
+  String? _topAtQuantity;
   double? _topDePrice;
   String? _topDeStore;
   String? _topDeCity; // <--- NEU
@@ -101,6 +100,11 @@ class __HomePageContentState extends State<_HomePageContent> {
   String? _topDisplayUnit;
   String? _topProductImageUrl; // <--- NEU: Produktbild-URL
 
+
+  String _getDisplayString(String? input) {
+    if (input == null) return 'Unbekannt'; // oder wie auch immer du mit null umgehst
+  return toProperCase(input);
+  }
 
   // Methode zum Aktualisieren der user_ids
   Future<void> updateUserIds(BuildContext context) async {
@@ -196,11 +200,11 @@ class __HomePageContentState extends State<_HomePageContent> {
           _topDePrice = null;
           _topDeStore = null;
           _topDeCity = null; // <--- NEU
-          _topDeQuantity = null; // <--- NEU
+          _topDeQuantity = null;
           _topPercentageDiff = null;
           _topDisplayUnit = null;
-          _topProductImageUrl = null; // Oder wie heißt das Feld in PriceEntry?
-
+          _topProductImageUrl = null;
+          _isLoadingTopProduct = false;
         });
         return;
       }
@@ -281,7 +285,8 @@ class __HomePageContentState extends State<_HomePageContent> {
           _topDeCity = currentDePrice.city;
           _topAtQuantity = currentAtPrice.quantity;
           _topDeQuantity = currentDePrice.quantity;
-        _topProductImageUrl = currentAtPrice.productImageURL; // Oder wie heißt das Feld in PriceEntry?
+          _topProductImageUrl = currentAtPrice
+              .productImageURL; // Oder wie heißt das Feld in PriceEntry?
 
           // --- ENDE NEU ---
         }
@@ -298,7 +303,7 @@ class __HomePageContentState extends State<_HomePageContent> {
           _topDeStore = topDePrice.store;
           _topPercentageDiff = maxDiff;
           _topDisplayUnit = topDisplayUnit ?? 'Stück';
-
+          _isLoadingTopProduct = false; // <-- Setze auf false, wenn keine Daten
         } else {
           _topProductBarcode = null; // <--- Zurücksetzen
           _topProductName = null;
@@ -312,7 +317,9 @@ class __HomePageContentState extends State<_HomePageContent> {
           _topDeQuantity = null; // <--- NEU
           _topPercentageDiff = null;
           _topDisplayUnit = null;
+          _topProductImageUrl = null;
         }
+        _isLoadingTopProduct = false; // <-- Setze auf false, wenn Daten da
       });
     });
   }
@@ -320,11 +327,94 @@ class __HomePageContentState extends State<_HomePageContent> {
   @override
   void initState() {
     super.initState();
-    // Initialisiere die Berechnung
+    setState(() {
+      _isLoadingTopProduct = true;
+    });
+
     _calculateTopDifference();
   }
 
-    @override
+  // --- NEU: Methode zum Normalisieren von Strings ---
+  Future<void> _normalizeStrings(BuildContext context) async {
+    int updatedCount = 0;
+    int totalCount = 0;
+
+    try {
+      // Hole alle Dokumente aus der 'prices'-Collection
+      final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('prices')
+          .get();
+
+      totalCount = querySnapshot.docs.length;
+
+      // Durchlaufe alle Dokumente
+      for (final doc in querySnapshot.docs) {
+        final docId = doc.id;
+        final data = doc.data();
+
+        // Prüfe, ob data ein Map ist
+        if (data is Map<String, dynamic>) {
+          bool needsUpdate = false;
+          Map<String, dynamic> updateData = {};
+
+          // --- 1. Prüfe 'city' ---
+          final city = data['city'];
+          if (city != null && city is String) {
+            final lowerCity = city.toLowerCase();
+            if (city != lowerCity) {
+              updateData['city'] = lowerCity;
+              needsUpdate = true;
+            }
+          }
+
+          // --- 2. Prüfe 'productName' ---
+          final productName = data['product_name'];
+          if (productName != null && productName is String) {
+            final lowerProductName = productName.toLowerCase();
+            if (productName != lowerProductName) {
+              updateData['product_name'] = lowerProductName;
+              needsUpdate = true;
+            }
+          }
+
+          // --- 3. Prüfe 'store' ---
+          final store = data['store'];
+          if (store != null && store is String) {
+            final lowerStore = store.toLowerCase();
+            if (store != lowerStore) {
+              updateData['store'] = lowerStore;
+              needsUpdate = true;
+            }
+          }
+
+          // --- 4. Update nur, wenn Änderungen vorliegen ---
+          if (needsUpdate) {
+            await FirebaseFirestore.instance
+                .collection('prices')
+                .doc(docId)
+                .update(updateData);
+            updatedCount++;
+          }
+        }
+      }
+
+      // Zeige eine Erfolgsmeldung
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '$updatedCount von $totalCount Einträgen erfolgreich in Kleinbuchstaben umgewandelt.',
+          ),
+        ),
+      );
+    } catch (e) {
+      // Zeige eine Fehlermeldung
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler beim Normalisieren der Strings: $e')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Verwende das Custom-Styling
     final theme = Theme.of(context);
@@ -367,7 +457,7 @@ class __HomePageContentState extends State<_HomePageContent> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  'Vereint gegen den Österreich-Aufschlag.',
+                  'Gemeinsam gegen den Österreich-Aufschlag.',
                   style: textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
@@ -376,7 +466,7 @@ class __HomePageContentState extends State<_HomePageContent> {
                 ),
                 SizedBox(height: AppSpacing.l),
                 Text(
-                  'Schliess dich der AlpenPreisGrenze Community an und finde Österreich-Aufschläge '
+                  'Schließ dich der AlpenPreisGrenze Community an und finde Österreich-Aufschläge '
                   'bei Lebensmitteln. Gemeinsam können wir etwas bewegen!',
                   style: textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -411,389 +501,445 @@ class __HomePageContentState extends State<_HomePageContent> {
                   context,
                   theme,
                 ),
-                // --- NEU: Karte für den Top-Unterschied mit Tap-Handler und erweiterten Daten ---
-                if (_topProductName != null &&
-                    _topAtPrice != null &&
-                    _topDePrice != null &&
-                    _topPercentageDiff != null &&
-                    _topProductBarcode != null) // <--- _topProductBarcode prüfen
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.m),
-                    child: GestureDetector(
-                      // <--- GestureDetector hinzufügen
-                      onTap: () async {
-                        // <--- NEU: async onTap-BLOCK
-                        // Zeige Ladeanzeige (optional, z.B. mit einem SnackBar)
-                        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lade Produkt...')));
-
-                        try {
-                          // Lade das vollständige Produktobjekt
-                          final Product loadedProduct =
-                              await OpenFoodFactsService.fetchProduct(
-                            _topProductBarcode!,
-                          );
-
-                          // Prüfe, ob das Laden erfolgreich war
-                          if (loadedProduct.barcode != null) {
-                            // Annahme: Ein erfolgreich geladenes Produkt hat eine Barcode
-                            // Navigiere zur ComparisonScreen mit dem geladenen Produkt
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ComparisonScreen(
-                                  product:
-                                      loadedProduct, // <--- GELADENES OBJEKT ÜBERGEBEN
+                // --- NEU: Karte für den Top-Unterschied mit Tap-Handler und erweiterten Daten + Ladeanimation ---
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.m),
+                  child: Container(
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: EdgeInsets.all(AppSpacing.s),
+                      child:
+                          _isLoadingTopProduct // <-- Prüfe den Ladezustand
+                          ? Center(
+                              // <-- Zentriere das Lade-Widget
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  theme.colorScheme.primary, // Lila Farbe
                                 ),
                               ),
-                            );
-                          } else {
-                            // Fehler: Produkt konnte nicht geladen werden
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Produkt mit Barcode $_topProductBarcode konnte nicht geladen werden.',
-                                ),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          // Fehler beim Laden abfangen
-                          print(
-                            "Fehler beim Laden des Produkts aus OpenFoodFacts: $e",
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Fehler beim Laden des Produkts: $e'),
-                            ),
-                          );
-                        }
-                      },
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(height: AppSpacing.l),
-                          Text(
-                            'Der aktuelle "Hall of Shame" Superstar: ',//  im ${formatMonthYear(DateTime.now())}:',
-                            style: textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            textAlign: TextAlign.left,
-                          ),
-
-                          SizedBox(height: AppSpacing.s),
-                          Card(
-                            margin: EdgeInsets.zero,
-                            child: Padding(
-                              padding: EdgeInsets.all(AppSpacing.s),
+                            )
+                          : _topProductName != null &&
+                                _topAtPrice != null &&
+                                _topDePrice != null &&
+                                _topPercentageDiff != null &&
+                                _topProductBarcode != null
+                          ? // <-- Zeige Karte, wenn Daten da und nicht geladen
+                            GestureDetector(
+                              // <--- GestureDetector hinzufügen
+                              onTap: () async {
+                                // <--- NEU: async onTap-BLOCK
+                                // Zeige Ladeanzeige (optional, z.B. mit einem SnackBar)
+                                // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lade Produkt...')));
+                                try {
+                                  // Lade das vollständige Produktobjekt
+                                  final Product loadedProduct =
+                                      await OpenFoodFactsService.fetchProduct(
+                                        _topProductBarcode!,
+                                      );
+                                  if (loadedProduct.barcode != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ComparisonScreen(
+                                          product:
+                                              loadedProduct, // <--- GELADENES OBJEKT ÜBERGEBEN
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    // Fehler: Produkt konnte nicht geladen werden
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Produkt mit Barcode $_topProductBarcode konnte nicht geladen werden.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  // Fehler beim Laden abfangen
+                                  print(
+                                    "Fehler beim Laden des Produkts aus OpenFoodFacts: $e",
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Fehler beim Laden des Produkts: $e',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
                               child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          'Produkt: $_topProductName',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleMedium,
-                                        ),
-                                      ),
-                                      // Klickbarkeits-Hinweis (Pfeil)
-                                      Icon(
-                                        Icons.arrow_forward_ios,
-                                        size: 16,
-                                        color: theme.colorScheme.onSurfaceVariant
-                                            .withOpacity(0.6),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: AppSpacing.xs),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            // Fahne und Stadtname oben
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              children: [
-                                                Image.asset(
-                                                  'assets/logos/at-fahne.png',
-                                                  width: 24,
-                                                  height: 24,
-                                                  errorBuilder:
-                                                      (
-                                                        context,
-                                                        error,
-                                                        stackTrace,
-                                                      ) {
-                                                        return Icon(
-                                                          Icons.flag,
-                                                          size: 32,
-                                                        );
-                                                      },
-                                                ),
-                                                SizedBox(width: 8),
-                                                // Dynamischer Stadtname mit ValueListenableBuilder
-                                                if (_topAtCity != null)
-                                                  Text(
-                                                    '$_topAtCity',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.grey[800],
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                left: 20.0,
-                                              ), // Abstand von links
-                                              child: RichText(
-                                                text: TextSpan(
-                                                  style: DefaultTextStyle.of(
-                                                    context,
-                                                  ).style, // Standardstil des Widgets
-                                                  children: <TextSpan>[
-                                                    TextSpan(
-                                                      text:
-                                                          '€${_topAtPrice!.toStringAsFixed(2)} ',
-                                                      style: TextStyle(
-                                                        fontSize:
-                                                            (Theme.of(context)
-                                                                    .textTheme
-                                                                    .titleLarge
-                                                                    ?.fontSize ??
-                                                                18) *
-                                                            1.5, // 1.5-fache Größe
-                                                        fontWeight: FontWeight
-                                                            .bold, // Fett
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurface, // Farbe an Theme anpassen
-                                                      ),
-                                                    ),
-                                                    TextSpan(
-                                                      text:
-                                                          '(${_topAtQuantity ?? 'N/A'})',
-                                                      style: TextStyle(
-                                                        fontSize:
-                                                            (Theme.of(context)
-                                                                    .textTheme
-                                                                    .titleLarge
-                                                                    ?.fontSize ??
-                                                                18) *
-                                                            0.75, // Halbe Größe (0.5 * 1.5)
-                                                        fontWeight: FontWeight
-                                                            .normal, // Nicht fett
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurfaceVariant, // Variante Farbe für Menge
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                left: 20.0,
-                                              ), // Abstand von links
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  _buildStoreLogoOrText(
-                                                    context,
-                                                    _topAtStore ?? 'Unbekannt',
-                                                  ),
-                                                  if (_topAtPrice != null &&
-                                                      _topAtQuantity != null)
-                                                    _buildPricePerUnitInfo(
-                                                      _topAtPrice!,
-                                                      _topAtQuantity!,
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      // --- NEU: Produktbild in der Mitte ---
-                                      if (_topProductImageUrl != null)
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: AppSpacing.s), // Optional: Abstand
-                                          child: ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(8.0), // Optional: Ecken abrunden
-                                            child: Image.network(
-                                              _topProductImageUrl!,
-                                              width: 60, // Anpassen der Größe
-                                              height: 60,
-                                              fit: BoxFit.cover, // Oder BoxFit.contain, je nach Bedarf
-                                              errorBuilder: (context, error,
-                                                  stackTrace) {
-                                                // Falls das Laden des Bildes fehlschlägt, zeige ein Platzhalter-Icon
-                                                return Icon(
-                                                  Icons.image_not_supported,
-                                                  size: 40,
-                                                  color: Colors.grey,
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        )
-                                      else
-                                        // Falls kein Bild vorhanden ist, zeige einen Platzhalter
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: AppSpacing.s),
-                                          child: Icon(
-                                            Icons.image_not_supported,
-                                            size: 40,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      // --- ENDE NEU ---
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            // --- NEU: DE: Fahne und Stadtname ---
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              children: [
-                                                Image.asset(
-                                                  'assets/logos/de-fahne.png', // Stelle sicher, dass diese Datei existiert
-                                                  width: 24,
-                                                  height: 24,
-                                                  errorBuilder:
-                                                      (
-                                                        context,
-                                                        error,
-                                                        stackTrace,
-                                                      ) {
-                                                        return Icon(
-                                                          Icons.flag,
-                                                          size: 32,
-                                                        );
-                                                      },
-                                                ),
-                                                SizedBox(width: 8),
-                                                if (_topDeCity != null)
-                                                  Text(
-                                                    '$_topDeCity',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.grey[800],
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                            // --- ENDE NEU ---
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                left: 20.0,
-                                              ), // Abstand von links
-                                              child: RichText(
-                                                text: TextSpan(
-                                                  style: DefaultTextStyle.of(
-                                                    context,
-                                                  ).style, // Standardstil des Widgets
-                                                  children: <TextSpan>[
-                                                    TextSpan(
-                                                      text:
-                                                          '€${_topDePrice!.toStringAsFixed(2)} ',
-                                                      style: TextStyle(
-                                                        fontSize:
-                                                            (Theme.of(context)
-                                                                    .textTheme
-                                                                    .titleLarge
-                                                                    ?.fontSize ??
-                                                                18) *
-                                                            1.5, // 1.5-fache Größe
-                                                        fontWeight: FontWeight
-                                                            .bold, // Fett
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurface, // Farbe an Theme anpassen
-                                                      ),
-                                                    ),
-                                                    TextSpan(
-                                                      text:
-                                                          '(${_topDeQuantity ?? 'N/A'})',
-                                                      style: TextStyle(
-                                                        fontSize:
-                                                            (Theme.of(context)
-                                                                    .textTheme
-                                                                    .titleLarge
-                                                                    ?.fontSize ??
-                                                                18) *
-                                                            0.75, // Halbe Größe (0.5 * 1.5)
-                                                        fontWeight: FontWeight
-                                                            .normal, // Nicht fett
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurfaceVariant, // Variante Farbe für Menge
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                left: 20.0,
-                                              ), // Abstand von links
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  _buildStoreLogoOrText(
-                                                    context,
-                                                    _topDeStore ?? 'Unbekannt',
-                                                  ),
-                                                  if (_topDePrice != null &&
-                                                      _topDeQuantity != null)
-                                                    _buildPricePerUnitInfo(
-                                                      _topDePrice!,
-                                                      _topDeQuantity!,
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                  SizedBox(height: AppSpacing.l),
+                                  Text(
+                                    'Anwärter auf den "Grenzenlose Gier" Award ${formatMonthYear(DateTime.now())}:',
+                                    style: textTheme.bodyLarge?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    textAlign: TextAlign.left,
                                   ),
                                   SizedBox(height: AppSpacing.s),
-                                  Text(
-                                    'Österreich-Aufschlag: ${_topPercentageDiff!.toStringAsFixed(2)} % (pro ${_topDisplayUnit!})',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.bold,
+                                  Card(
+                                    margin: EdgeInsets.zero,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(AppSpacing.s),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  'Produkt: ${_getDisplayString(_topProductName)}',
+                                                  style: Theme.of(
+                                                    context,
+                                                  ).textTheme.titleMedium,
+                                                ),
+                                              ),
+                                              // Klickbarkeits-Hinweis (Pfeil)
+                                              Icon(
+                                                Icons.arrow_forward_ios,
+                                                size: 16,
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSurfaceVariant
+                                                    .withOpacity(0.6),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: AppSpacing.xs),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // Fahne und Stadtname oben
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Image.asset(
+                                                          'assets/logos/at-fahne.png',
+                                                          width: 24,
+                                                          height: 24,
+                                                          errorBuilder:
+                                                              (
+                                                                context,
+                                                                error,
+                                                                stackTrace,
+                                                              ) {
+                                                                return Icon(
+                                                                  Icons.flag,
+                                                                  size: 32,
+                                                                );
+                                                              },
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        // Dynamischer Stadtname mit ValueListenableBuilder
+                                                        if (_topAtCity != null)
+                                                          Text(
+                                                            '${_getDisplayString(_topAtCity)}',
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: Colors
+                                                                  .grey[800],
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                    Padding(
+                                                      padding: EdgeInsets.only(
+                                                        left: 20.0,
+                                                      ), // Abstand von links
+                                                      child: RichText(
+                                                        text: TextSpan(
+                                                          style: DefaultTextStyle.of(
+                                                            context,
+                                                          ).style, // Standardstil des Widgets
+                                                          children: <TextSpan>[
+                                                            TextSpan(
+                                                              text:
+                                                                  '€${_topAtPrice!.toStringAsFixed(2)} ',
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    (Theme.of(context)
+                                                                            .textTheme
+                                                                            .titleLarge
+                                                                            ?.fontSize ??
+                                                                        18) *
+                                                                    1.5, // 1.5-fache Größe
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold, // Fett
+                                                                color: Theme.of(context)
+                                                                    .colorScheme
+                                                                    .onSurface, // Farbe an Theme anpassen
+                                                              ),
+                                                            ),
+                                                            TextSpan(
+                                                              text:
+                                                                  '(${_topAtQuantity ?? 'N/A'})',
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    (Theme.of(context)
+                                                                            .textTheme
+                                                                            .titleLarge
+                                                                            ?.fontSize ??
+                                                                        18) *
+                                                                    0.75, // Halbe Größe (0.5 * 1.5)
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .normal, // Nicht fett
+                                                                color: Theme.of(context)
+                                                                    .colorScheme
+                                                                    .onSurfaceVariant, // Variante Farbe für Menge
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Padding(
+                                                      padding: EdgeInsets.only(
+                                                        left: 20.0,
+                                                      ), // Abstand von links
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          _buildStoreLogoOrText(
+                                                            context,
+                                                            _topAtStore ??
+                                                                'Unbekannt',
+                                                          ),
+                                                          if (_topAtPrice !=
+                                                                  null &&
+                                                              _topAtQuantity !=
+                                                                  null)
+                                                            _buildPricePerUnitInfo(
+                                                              _topAtPrice!,
+                                                              _topAtQuantity!,
+                                                            ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              // --- NEU: Produktbild in der Mitte ---
+                                              if (_topProductImageUrl != null)
+                                                Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: AppSpacing.s,
+                                                  ), // Optional: Abstand
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8.0,
+                                                        ), // Optional: Ecken abrunden
+                                                    child: Image.network(
+                                                      _topProductImageUrl!,
+                                                      width:
+                                                          60, // Anpassen der Größe
+                                                      height: 60,
+                                                      fit: BoxFit
+                                                          .cover, // Oder BoxFit.contain, je nach Bedarf
+                                                      errorBuilder:
+                                                          (
+                                                            context,
+                                                            error,
+                                                            stackTrace,
+                                                          ) {
+                                                            // Falls das Laden des Bildes fehlschlägt, zeige ein Platzhalter-Icon
+                                                            return Icon(
+                                                              Icons
+                                                                  .image_not_supported,
+                                                              size: 40,
+                                                              color:
+                                                                  Colors.grey,
+                                                            );
+                                                          },
+                                                    ),
+                                                  ),
+                                                )
+                                              else
+                                                // Falls kein Bild vorhanden ist, zeige einen Platzhalter
+                                                Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: AppSpacing.s,
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.image_not_supported,
+                                                    size: 40,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              // --- ENDE NEU ---
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // --- NEU: DE: Fahne und Stadtname ---
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Image.asset(
+                                                          'assets/logos/de-fahne.png', // Stelle sicher, dass diese Datei existiert
+                                                          width: 24,
+                                                          height: 24,
+                                                          errorBuilder:
+                                                              (
+                                                                context,
+                                                                error,
+                                                                stackTrace,
+                                                              ) {
+                                                                return Icon(
+                                                                  Icons.flag,
+                                                                  size: 32,
+                                                                );
+                                                              },
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        if (_topDeCity != null)
+                                                          Text(
+                                                            _getDisplayString(_topDeCity),
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: Colors
+                                                                  .grey[800],
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                    // --- ENDE NEU ---
+                                                    Padding(
+                                                      padding: EdgeInsets.only(
+                                                        left: 20.0,
+                                                      ), // Abstand von links
+                                                      child: RichText(
+                                                        text: TextSpan(
+                                                          style: DefaultTextStyle.of(
+                                                            context,
+                                                          ).style, // Standardstil des Widgets
+                                                          children: <TextSpan>[
+                                                            TextSpan(
+                                                              text:
+                                                                  '€${_topDePrice!.toStringAsFixed(2)} ',
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    (Theme.of(context)
+                                                                            .textTheme
+                                                                            .titleLarge
+                                                                            ?.fontSize ??
+                                                                        18) *
+                                                                    1.5, // 1.5-fache Größe
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold, // Fett
+                                                                color: Theme.of(context)
+                                                                    .colorScheme
+                                                                    .onSurface, // Farbe an Theme anpassen
+                                                              ),
+                                                            ),
+                                                            TextSpan(
+                                                              text:
+                                                                  '(${_topDeQuantity ?? 'N/A'})',
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    (Theme.of(context)
+                                                                            .textTheme
+                                                                            .titleLarge
+                                                                            ?.fontSize ??
+                                                                        18) *
+                                                                    0.75, // Halbe Größe (0.5 * 1.5)
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .normal, // Nicht fett
+                                                                color: Theme.of(context)
+                                                                    .colorScheme
+                                                                    .onSurfaceVariant, // Variante Farbe für Menge
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Padding(
+                                                      padding: EdgeInsets.only(
+                                                        left: 20.0,
+                                                      ), // Abstand von links
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          _buildStoreLogoOrText(
+                                                            context,
+                                                            _topDeStore ??
+                                                                'Unbekannt',
+                                                          ),
+                                                          if (_topDePrice !=
+                                                                  null &&
+                                                              _topDeQuantity !=
+                                                                  null)
+                                                            _buildPricePerUnitInfo(
+                                                              _topDePrice!,
+                                                              _topDeQuantity!,
+                                                            ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: AppSpacing.s),
+                                          Text(
+                                            'Österreich-Aufschlag: ${_topPercentageDiff!.toStringAsFixed(2)} % (pro ${_topDisplayUnit!})',
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
+                            )
+                          : // Falls keine Daten vorhanden sind (und nicht geladen wird)
+                            Container(
+                              // Optional: Platzhalter, wenn keine Daten vorhanden sind
+                              padding: EdgeInsets.all(AppSpacing.m),
+                              child: Text(
+                                'Kein aktueller Hall of Shame-Eintrag verfügbar.',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
+                ),
                 SizedBox(height: AppSpacing.xl),
                 ElevatedButton(
                   onPressed: () {
@@ -853,6 +999,18 @@ class __HomePageContentState extends State<_HomePageContent> {
                             deleteOldEntries(context);
                           },
                         ),
+                        ListTile(
+                          leading: Icon(
+                            Icons.text_fields,
+                          ), // Oder ein anderes passendes Icon
+                          title: Text('Strings normalisieren'),
+                          onTap: () {
+                            Navigator.pop(context); // Schließe den Dialog
+                            _normalizeStrings(
+                              context,
+                            ); // <-- Ruf die neue Methode auf
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -866,7 +1024,7 @@ class __HomePageContentState extends State<_HomePageContent> {
           : null, // Der Button wird nur für die spezifische UID angezeigt
     );
   }
-  
+
   Widget _buildGoalItem(
     IconData icon,
     String text,
