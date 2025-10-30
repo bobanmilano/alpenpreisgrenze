@@ -13,8 +13,14 @@ Duch einen einfachen Scan des Produktbarcodes mit der AlpenPreisGrenze App bekom
 Österreich-Aufschlag angezeigt. Falls vorhanden auch die Höhe der "Shrinkflation" (gleicher Preis, weniger Inhalt) und/oder der
 "Sizefuscation" (handelsunübliche Packungsgrößen die der Preisverschleierung dienen).
 
+
 <p align="center">
-<img src="assets/compare-bg.png" alt="Österreich-Aufschlag entdecken" width="350">
+  <table>
+    <tr>
+      <td><img src="assets/home-bg.png" alt="Startseite" width="350"></td>
+      <td><img src="assets/compare-bg.png" alt="Preisvergleich" width="350"></td>
+    </tr>
+  </table>
 </p>
 
 ## 🚀 Österreich-Aufschlag teilen
