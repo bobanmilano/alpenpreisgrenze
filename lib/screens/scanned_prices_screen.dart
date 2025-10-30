@@ -151,6 +151,10 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
     // Paginierung nur im Filtermodus (niemals bei Suche)
     if (_searchController.text.trim().isNotEmpty) return;
 
+    if (_searchController.text.trim().isNotEmpty) {
+      FocusScope.of(context).unfocus();
+    }
+
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 100 &&
         !_isLoading &&
@@ -244,7 +248,7 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.filter_list),
+            icon: Icon(Icons.filter_alt),
             onPressed: _showFilterDialog,
           ),
         ],

@@ -114,6 +114,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final canChange = await RateLimitService.canUserChangeProfileImage(
       _currentUser!.uid,
     );
+    
     if (!canChange) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

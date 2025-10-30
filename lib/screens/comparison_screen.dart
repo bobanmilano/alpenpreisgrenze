@@ -329,9 +329,9 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
       // Erstellen der Teilen-Nachricht
       final shareText =
-          'Preisunterschied für "${widget.product.productName}":\n'
-          'Österreich: €${atPrice.price.toStringAsFixed(2)}\n'
-          'Deutschland: €${dePrice.price.toStringAsFixed(2)}\n'
+          'Österreich-Aufschlag für "${widget.product.productName}" bei ${atPrice.displayStore}:\n'
+          'Österreich: €${atPrice.price.toStringAsFixed(2)} (${atPrice.quantity})\n'
+          'Deutschland: €${dePrice.price.toStringAsFixed(2)} (${dePrice.quantity})\n'
           '#ÖsterreichAufschlag #Preisvergleich';
 
       // Teilen des Screenshots mit der Nachricht

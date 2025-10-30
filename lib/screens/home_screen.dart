@@ -940,7 +940,7 @@ class __HomePageContentState extends State<_HomePageContent> {
                     ),
                   ),
                 ),
-                SizedBox(height: AppSpacing.xl),
+                SizedBox(height: AppSpacing.l),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.push(

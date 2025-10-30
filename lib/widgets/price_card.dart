@@ -344,7 +344,10 @@ class _PriceCardState extends State<PriceCard>
                   );
                 });
               },
-              child: Text('Preis hinzufügen'),
+              child: Text('Preis hinzufügen',  textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary)),
             ),
           ),
         ],
