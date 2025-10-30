@@ -5,11 +5,11 @@
 
 ## 🏠 Die Mission von AlpenPreisGrenze
 
-Willkommen bei Ihrer MStop-Österreich-Aufschlag-App AlpenPreisGrenze! Wir glauben daran, dass jeder Österreicher das Recht auf faire und transparente Preise im Einzelhandel hat. Unser Ziel ist es, die Preise in Österreich mit den Deutschen Preisen anzugleichen!
+Willkommen bei AlpenPreisGrenze, der Stop-Österreich-Aufschlag-App! Wir glauben daran, dass auch Österreicher:innen das Recht auf faire und transparente Preise im Einzelhandel haben. Unser Ziel ist es, die Preise in Österreich mit den Deutschen Preisen anzugleichen!
 
 ## 🔍 Österreich-Aufschlag schnell und einfach ermitteln
 
-Duch eine Scan des Produktbarcodes mit der AlpenPreisGrenze App bekommt der Benutzer sofort den 
+Duch einen einfachen Scan des Produktbarcodes mit der AlpenPreisGrenze App bekommt der Benutzer sofort den 
 Österreich-Aufschlag angezeigt. Falls vorhanden auch die Höhe der "Shrinkflation" (gleicher Preis, weniger Inhalt) und/oder der
 "Sizefuscation" (handelsunübliche Packungsgrößen die der Preisverschleierung dienen).
 
@@ -19,7 +19,7 @@ Duch eine Scan des Produktbarcodes mit der AlpenPreisGrenze App bekommt der Benu
 
 ## 🚀 Österreich-Aufschlag teilen
 
-User können ihre entdeckten Österreich-Aufschläge (aber auch die von anderen Users) schnell und einfach aus der App heraus in den Sozialen Medien teilen. Auch gibt es die Möglichkeit vorgefertigte E-Mails an den Kundendienst des entsprechenden Händlers zu senden! Darin wird auf die gefundene Preisdifferenz aufmerksam gemacht und um Erklärung ersucht wie es dazu kommt! 
+User:innen können ihre entdeckten Österreich-Aufschläge (aber auch die von anderen Nutzern) schnell und einfach aus der App heraus in den Sozialen Netzwerken teilen. Auch gibt es die Möglichkeit vorgefertigte E-Mails an den Kundendienst des entsprechenden Händlers zu senden! Darin wird auf die gefundene Preisdifferenz aufmerksam gemacht und um Erklärung ersucht wie es dazu kommt! 
 
 <p align="center">
 <img src="assets/share-bg.png" alt="Entdeckungen teilen" width="350">
@@ -27,13 +27,13 @@ User können ihre entdeckten Österreich-Aufschläge (aber auch die von anderen 
 
 ## ✊ Gemeinsam Druck auf den Handel ausüben
 
-Das Ziel ist es in einer koordinierten, gemeinschaftlichen Aktion die sozialen Netzwerke zu fluten und die E-Mail-Postfächer der Handelskonzerne zum Glühen zu bringen! Aktionen wie die Verleihung des "goldenen Häufchens" in dem jede Woche der Händler mit dem grössten ermittelten Österreich-Aufschlag "geehrt" wird verstärken den öffentlichen Druck noch weiter! 
+Das Ziel ist es in einer koordinierten, gemeinschaftlichen Aktion die sozialen Netzwerke zu fluten und die E-Mail-Postfächer der Handelskonzerne zum Glühen zu bringen! Aktionen wie die Verleihung des monatlichen "Grenzenlose Gier Award" in dem derjenige Händler mit dem grössten ermittelten Österreich-Aufschlag "geehrt" wird verstärken den öffentlichen Druck noch weiter! 
 
 ## 🌟 Vorteile
 
 - **Zentrale Sammlung aktueller Preisdifferenzen**: Erstellt von echten Kunden
 - **Community-basiert**: Von Kunden für Kunden - keine kommerziellen Interessen
-- **Aktuelle Informationen**: Immer auf dem neuesten Stand über aktuelle Preisunterschiede
+- **Aktuelle Informationen**: Immer auf dem neuesten Stand über aktuelle Österreich-Aufschläge
 - **Kostenlos & unabhängig**: Keine versteckten Kosten oder Gebühren
 - **Datenschutz**: Ihre Daten gehören Ihnen - wir respektieren Ihre Privatsphäere
 
@@ -42,14 +42,14 @@ Das Ziel ist es in einer koordinierten, gemeinschaftlichen Aktion die sozialen N
 Sie können die App auf zwei Arten installieren:
 
 Option 1: Direkt per QR-Code (einfachster Weg)
-Scannen Sie den folgenden QR-Code mit der Kamera Ihres Smartphones. Sie werden direkt zum Download der neuesten Version weitergeleitet.
+Scannen Sie folgenden QR-Code mit der Kamera Ihres Smartphones. Sie werden direkt zum Download der neuesten Version weitergeleitet.
 
 <p align="center">
 <img src="assets/github-release-v1.0.6.png" alt="Installations-QR-Code" width="200">
 </p>
 
 Option 2: Manueller Download
-Laden Sie die neueste Version der App aus den Releases herunter.
+Laden Sie die neueste Version der App aus den Releases herunter: https://github.com/bobanmilano/alpenpreisgrenze/releases
 
 Laden Sie die Datei app-release.apk herunter.
 Öffnen Sie die Datei auf Ihrem Android-Gerät.
