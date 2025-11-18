@@ -13,11 +13,9 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // GlobalKey für den Fortschrittsdialog
   final GlobalKey<_ProgressDialogState> _dialogKey = GlobalKey();
 
   Future<void> deleteUserAccount(BuildContext context) async {
-    // Zeige den Fortschrittsdialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -30,8 +28,10 @@ class UserProvider with ChangeNotifier {
         throw Exception('Kein Benutzer angemeldet.');
       }
 
-      // Firestore-Daten löschen
-      await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).delete();
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .delete();
 
       bool deletionSuccessful = false;
       bool requiresReauth = false;
@@ -47,7 +47,6 @@ class UserProvider with ChangeNotifier {
         }
       }
 
-      // Erster Dialog schließen
       print('Schließe ersten Dialog...');
       _closeDialog();
 
@@ -55,7 +54,6 @@ class UserProvider with ChangeNotifier {
         final bool reauthSuccess = await _showReauthenticateDialog(context);
 
         if (reauthSuccess) {
-          // Zeige zweiten Fortschrittsdialog
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -68,7 +66,6 @@ class UserProvider with ChangeNotifier {
             deletionSuccessful = true;
           }
 
-          // Zweiter Dialog schließen
           print('Schließe zweiten Dialog...');
           _closeDialog();
         } else {
@@ -77,7 +74,7 @@ class UserProvider with ChangeNotifier {
       }
 
       if (deletionSuccessful) {
-        setUser(null); // Benutzerstatus zurücksetzen
+        setUser(null);
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -85,9 +82,8 @@ class UserProvider with ChangeNotifier {
           );
         }
 
-        // Navigiere zum Login-Screen
         if (context.mounted) {
-          await Future.delayed(Duration(milliseconds: 200)); // Kurze Verzögerung
+          await Future.delayed(Duration(milliseconds: 200));
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => LoginScreen()),
@@ -98,10 +94,8 @@ class UserProvider with ChangeNotifier {
     } catch (e) {
       print('Fehler aufgetreten: $e');
 
-      // Sicherstellen, dass der Dialog geschlossen wird
       _closeDialog();
 
-      // Fehlermeldung anzeigen
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Fehler beim Löschen des Accounts: $e')),
@@ -110,7 +104,6 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  // Hilfsmethode zum Schließen des Dialogs
   void _closeDialog() {
     if (_dialogKey.currentState != null) {
       _dialogKey.currentState?.closeDialog();
@@ -145,7 +138,6 @@ class UserProvider with ChangeNotifier {
   }
 }
 
-// Widget für den Fortschrittsdialog
 class _ProgressDialog extends StatefulWidget {
   const _ProgressDialog({Key? key}) : super(key: key);
 
@@ -154,7 +146,6 @@ class _ProgressDialog extends StatefulWidget {
 }
 
 class _ProgressDialogState extends State<_ProgressDialog> {
-  // Methode zum Schließen des Dialogs
   void closeDialog() {
     if (Navigator.canPop(context)) {
       Navigator.of(context).pop();

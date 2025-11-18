@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-// Falls du Google Fonts nutzen willst:
-// import 'package:google_fonts/google_fonts.dart';
+
 import 'app_theme.dart';
 
 class AppThemeConfig {
@@ -20,15 +19,14 @@ class AppThemeConfig {
     ),
     colorScheme: ColorScheme.light(
       primary: AppColors.primary,
-      secondary: AppColors.secondary, // Jetzt mit neuem Akzent (Orange)
+      secondary: AppColors.secondary,
       surface: AppColors.cardBackground,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
       onSurface: AppColors.textPrimary,
       error: AppColors.error,
     ),
-    // Optional: Falls du Google Fonts verwendest:
-    // textTheme: GoogleFonts.interTextTheme(
+
     textTheme: TextTheme(
       headlineLarge: TextStyle(
         fontSize: AppTypography.headline1,
@@ -65,7 +63,7 @@ class AppThemeConfig {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.secondary, // Orange-Button
+        backgroundColor: AppColors.secondary,
         foregroundColor: Colors.white,
         textStyle: const TextStyle(
           fontSize: AppTypography.body,
@@ -106,24 +104,15 @@ class AppThemeConfig {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.medium),
-        borderSide: BorderSide(
-          color: AppColors.primary, // Grün bei Fokus
-          width: 2.0,
-        ),
+        borderSide: BorderSide(color: AppColors.primary, width: 2.0),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.medium),
-        borderSide: BorderSide(
-          color: AppColors.error,
-          width: 1.0,
-        ),
+        borderSide: BorderSide(color: AppColors.error, width: 1.0),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.medium),
-        borderSide: BorderSide(
-          color: AppColors.error,
-          width: 2.0,
-        ),
+        borderSide: BorderSide(color: AppColors.error, width: 2.0),
       ),
     ),
   );

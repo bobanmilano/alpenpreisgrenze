@@ -3,12 +3,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:my_price_tracker_app/services/firebase_service.dart';
 import 'dart:ui';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   final FirebaseService _firebaseService = FirebaseService();
-  // Neue echte userId (ersetzen Sie dies durch die tatsächliche userId)
-  late String newUserId = _firebaseService.getCurrentUserId();  // Beispiel: 'abc123'
+
+  late String newUserId = _firebaseService.getCurrentUserId();
 
   try {
     final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -16,7 +17,9 @@ void main() async {
         .where('user_id', isEqualTo: 'test_user_id')
         .get();
 
-    print('Anzahl der zu aktualisierenden Einträge: ${querySnapshot.docs.length}');
+    print(
+      'Anzahl der zu aktualisierenden Einträge: ${querySnapshot.docs.length}',
+    );
 
     for (final doc in querySnapshot.docs) {
       final docId = doc.id;

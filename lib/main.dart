@@ -1,4 +1,3 @@
-// lib/main.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -8,8 +7,7 @@ import 'package:my_price_tracker_app/theme/app_theme_config.dart';
 import 'package:my_price_tracker_app/widgets/overlay_connection_status.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
-import 'services/connectivity_service.dart'; // Importiere den neuen Service
-// Importiere das Overlay-Widget
+import 'services/connectivity_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,17 +64,10 @@ class AuthWrapper extends StatelessWidget {
         }
 
         if (snapshot.hasData && snapshot.data != null) {
-          // ✅ Korrektur: Entferne das '!' und verwende snapshot.data direkt
-          // Da die Bedingung 'snapshot.data != null' bereits geprüft wurde,
-          // ist sichergestellt, dass snapshot.data nicht null ist.
-          userProvider.setUser(snapshot.data); // Entferne das '!'
-          return OverlayConnectionStatus(
-            child: HomeScreen(),
-          );
+          userProvider.setUser(snapshot.data);
+          return OverlayConnectionStatus(child: HomeScreen());
         } else {
-          return OverlayConnectionStatus(
-            child: LoginScreen(),
-          );
+          return OverlayConnectionStatus(child: LoginScreen());
         }
       },
     );

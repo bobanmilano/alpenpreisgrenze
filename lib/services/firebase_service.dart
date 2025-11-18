@@ -1,4 +1,3 @@
-// lib/services/firebase_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/price_entry.dart';
@@ -8,18 +7,15 @@ class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Methode zum Abrufen der aktuellen Benutzer-ID
   String getCurrentUserId() {
     final User? user = _auth.currentUser;
     if (user != null) {
-      return user.uid; // Die eindeutige Firebase-Benutzer-ID
+      return user.uid;
     } else {
       throw Exception('Kein Benutzer angemeldet.');
     }
   }
 
-  // Methode zum Finden eines alten Preis-Eintrags, der überschrieben werden kann
-  // WICHTIG: user_id wird NICHT als Filter verwendet
   Future<DocumentSnapshot<Map<String, dynamic>>?> findOldPriceEntryToReplace(
     String barcode,
     String country,
@@ -31,9 +27,8 @@ class FirebaseService {
         .where('barcode', isEqualTo: barcode)
         .where('country', isEqualTo: country)
         .where('price', isEqualTo: price)
-        // Kein Filter für 'user_id'
         .where('timestamp', isLessThan: Timestamp.fromDate(oneMonthAgo))
-        .limit(1) // Nimm nur den ersten gefundenen alten Eintrag
+        .limit(1)
         .get();
 
     if (querySnapshot.docs.isNotEmpty) {
@@ -79,7 +74,6 @@ class FirebaseService {
   }) {
     Query query = FirebaseFirestore.instance.collection('prices');
 
-    // Filtern nach aktuellem Benutzer oder allen Benutzern
     if (activeFilter == 'meine_scans') {
       query = query.where('user_id', isEqualTo: userId);
     } else if (activeFilter == 'aktuelle_scans') {
@@ -88,27 +82,20 @@ class FirebaseService {
       query = query.where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo);
     }
 
-    // Sortierung nach dem Zeitstempel ODER nach product_name für die Präfixsuche
     if (searchQuery.isNotEmpty) {
-      // Wenn Suchbegriff vorhanden, sortiere nach product_name (für Präfixsuche)
       query = query.orderBy('product_name', descending: false);
     } else {
-      // Wenn kein Suchbegriff, sortiere nach Timestamp (wie vorher)
       query = query.orderBy('timestamp', descending: true);
     }
 
-    // Suchfilter (Präfixsuche nach Produktnamen - exakt wie eingegeben)
     if (searchQuery.isNotEmpty) {
-      // Verwende \uf8ff als "Ende des Zeichensatzes" für die Präfixsuche
       query = query
           .where('product_name', isGreaterThanOrEqualTo: searchQuery)
           .where('product_name', isLessThanOrEqualTo: "$searchQuery\uf8ff");
     }
 
-    // Begrenzung der Ergebnisse
     query = query.limit(limit);
 
-    // Starte nach einem bestimmten Dokument
     if (startAfterDocument != null) {
       query = query.startAfterDocument(startAfterDocument);
     }
@@ -116,7 +103,6 @@ class FirebaseService {
     return query.snapshots();
   }
 
-  // Methode zum Abrufen der gescannten Preise eines Benutzers mit Pagination
   Stream<List<QueryDocumentSnapshot>> getUserScannedPrices(
     String userId,
     int limit, {
@@ -124,7 +110,7 @@ class FirebaseService {
   }) {
     print(
       "getUserScannedPrices: Abfrage mit userId = $userId, limit = $limit, startAfterDocument = ${startAfterDocument?.id}",
-    ); // ✅ Debug-Ausgabe
+    );
 
     Query query = _firestore
         .collection(collectionName)
@@ -139,7 +125,7 @@ class FirebaseService {
     return query.snapshots().map((snapshot) {
       print(
         "getUserScannedPrices: ${snapshot.docs.length} Dokumente gefunden (gesamt: ${snapshot.size})",
-      ); // ✅ Debug-Ausgabe
+      );
       return snapshot.docs;
     });
   }
@@ -164,7 +150,6 @@ class FirebaseService {
 
   Future<Map<String, String>?> getEmailTemplate() async {
     try {
-      // Lade alle Dokumente aus der Collection
       final querySnapshot = await FirebaseFirestore.instance
           .collection('supportemailtext')
           .get();
@@ -174,10 +159,9 @@ class FirebaseService {
         return null;
       }
 
-      // Nehme das erste Dokument
       final document = querySnapshot.docs.first;
       final data = document.data();
-      print("Geladene Vorlage: $data"); // Debugging-Ausgabe
+      print("Geladene Vorlage: $data");
 
       return Map<String, String>.from(data);
     } catch (e) {
@@ -186,7 +170,6 @@ class FirebaseService {
     }
   }
 
-  // Methode zum Abrufen des günstigsten Preises für einen Barcode in einem bestimmten Land (nicht älter als 1 Monat)
   Stream<PriceEntry?> getPriceInSpecificCountryForBarcode(
     String barcode,
     String country,
@@ -197,10 +180,7 @@ class FirebaseService {
         .where('barcode', isEqualTo: barcode)
         .where('country', isEqualTo: country)
         .where('timestamp', isGreaterThan: Timestamp.fromDate(oneMonthAgo))
-        .orderBy(
-          'price',
-          descending: false,
-        ) // Optional: z.B. günstigsten nehmen
+        .orderBy('price', descending: false)
         .limit(1)
         .snapshots()
         .map((snapshot) {
@@ -238,10 +218,8 @@ class FirebaseService {
     });
   }
 
-  // Methode zum Speichern/Überschreiben eines neuen Preis-Eintrags
   Future<String?> savePriceEntry(PriceEntry priceEntry) async {
     try {
-      // Suche nach vorhandenem Eintrag für denselben Händler
       final querySnapshot = await _firestore
           .collection(collectionName)
           .where('barcode', isEqualTo: priceEntry.barcode)
@@ -251,7 +229,6 @@ class FirebaseService {
           .get();
 
       if (querySnapshot.docs.isNotEmpty) {
-        // Eintrag existiert bereits
         final existingDoc = querySnapshot.docs.first;
         final existingPrice =
             (existingDoc.data() as Map<String, dynamic>)['price'] as double;
@@ -259,7 +236,6 @@ class FirebaseService {
             (existingDoc.data() as Map<String, dynamic>)['timestamp']
                 as Timestamp;
 
-        // Prüfe, ob überschrieben werden darf
         bool canOverride = false;
         String reason = '';
 
@@ -272,12 +248,10 @@ class FirebaseService {
           canOverride = true;
           reason = 'Neuer Preis ist niedriger als der alte Preis.';
         } else {
-          // Preis darf nicht überschrieben werden
-          return null; // Signalisiert, dass nicht gespeichert wurde
+          return null;
         }
 
         if (canOverride) {
-          // Überschreibe den bestehenden Eintrag
           await _firestore
               .collection(collectionName)
               .doc(existingDoc.id)
@@ -286,20 +260,16 @@ class FirebaseService {
                 'quantity': priceEntry.quantity,
                 'city': priceEntry.city,
                 'product_image_url': priceEntry.productImageURL,
-                'timestamp': FieldValue.serverTimestamp(), // Server-Zeit
+                'timestamp': FieldValue.serverTimestamp(),
               });
-          return existingDoc
-              .id; // Rückgabe der ID des überschriebenen Dokuments
+          return existingDoc.id;
         } else {
-          // Preis darf nicht überschrieben werden
-          return null; // Signalisiert, dass nicht gespeichert wurde
+          return null;
         }
       } else {
-        // Kein bestehender Eintrag → füge neuen hinzu
         final docRef = await _firestore.collection(collectionName).add({
           'barcode': priceEntry.barcode,
-          'product_name':
-              priceEntry.productName, // Speichere den Namen so wie er ist
+          'product_name': priceEntry.productName,
           'brands': priceEntry.brands,
           'quantity': priceEntry.quantity,
           'price': priceEntry.price,
@@ -308,7 +278,7 @@ class FirebaseService {
           'country': priceEntry.country,
           'store': priceEntry.store,
           'product_image_url': priceEntry.productImageURL,
-          'timestamp': FieldValue.serverTimestamp(), // Server-Zeit
+          'timestamp': FieldValue.serverTimestamp(),
         });
         return docRef.id;
       }
@@ -318,8 +288,6 @@ class FirebaseService {
     }
   }
 
-  // Methode zum Prüfen, ob ein Preis-Eintrag (für ein Land) bereits existiert und NICHT älter als 1 Monat ist
-  // WICHTIG: user_id wird NICHT als Filter verwendet
   Future<bool> checkIfPriceEntryExists(
     String barcode,
     String country,
@@ -331,7 +299,6 @@ class FirebaseService {
         .where('barcode', isEqualTo: barcode)
         .where('country', isEqualTo: country)
         .where('price', isEqualTo: price)
-        // Kein Filter für 'user_id'
         .where('timestamp', isGreaterThan: Timestamp.fromDate(oneMonthAgo))
         .limit(1)
         .get();
@@ -339,7 +306,6 @@ class FirebaseService {
     return querySnapshot.docs.isNotEmpty;
   }
 
-  // Methode zum Abrufen *aller* Preis-Einträge für einen bestimmten Barcode (ohne Benutzerfilter)
   Stream<List<PriceEntry>> getAllPriceEntriesForBarcode(String barcode) {
     return _firestore
         .collection(collectionName)
@@ -352,7 +318,6 @@ class FirebaseService {
         );
   }
 
-  // Methode zum Abrufen des günstigsten Preises für einen Barcode in Deutschland (nicht älter als 1 Monat)
   Stream<PriceEntry?> getCheapestPriceInGermanyForBarcode(String barcode) {
     final oneMonthAgo = DateTime.now().subtract(Duration(days: 30));
     return _firestore
@@ -375,19 +340,16 @@ class FirebaseService {
         });
   }
 
-  // --- NEU: Methode zum Löschen eines Preis-Eintrags nach ID ---
   Future<void> deletePriceEntryById(String docId) async {
     try {
       await FirebaseFirestore.instance.collection('prices').doc(docId).delete();
       print("DEBUG: Preis-Eintrag mit ID $docId erfolgreich gelöscht.");
     } catch (e) {
       print("Fehler beim Löschen des Preis-Eintrags mit ID $docId: $e");
-      rethrow; // Wirf den Fehler erneut, damit der Aufrufer ihn behandeln kann
+      rethrow;
     }
   }
-  // --- ENDE NEU ---
 
-  // NEUE Methode: Suche nach Präfix in product_name, store oder city - GIBT EINE LISTE ZURÜCK
   Future<List<PriceEntry>> searchPricesByPrefix(
     String userId,
     int limit,
@@ -398,10 +360,8 @@ class FirebaseService {
       return [];
     }
 
-    // Liste aller gefundenen Dokumente sammeln
     Set<DocumentSnapshot> allResults = {};
 
-    // 1. Suche nach product_name
     Query queryProduct = _firestore.collection(collectionName);
     if (activeFilter == 'meine_scans') {
       queryProduct = queryProduct.where('user_id', isEqualTo: userId);
@@ -422,7 +382,6 @@ class FirebaseService {
     final productSnapshot = await queryProduct.get();
     allResults.addAll(productSnapshot.docs);
 
-    // 2. Suche nach store
     Query queryStore = _firestore.collection(collectionName);
     if (activeFilter == 'meine_scans') {
       queryStore = queryStore.where('user_id', isEqualTo: userId);
@@ -443,7 +402,6 @@ class FirebaseService {
     final storeSnapshot = await queryStore.get();
     allResults.addAll(storeSnapshot.docs);
 
-    // 3. Suche nach city
     Query queryCity = _firestore.collection(collectionName);
     if (activeFilter == 'meine_scans') {
       queryCity = queryCity.where('user_id', isEqualTo: userId);
@@ -464,7 +422,6 @@ class FirebaseService {
     final citySnapshot = await queryCity.get();
     allResults.addAll(citySnapshot.docs);
 
-    // Konvertiere Set zu List und sortiere nach Timestamp (oder einem anderen Kriterium)
     List<DocumentSnapshot> sortedResults = allResults.toList();
     sortedResults.sort((a, b) {
       final timestampA =
@@ -476,12 +433,10 @@ class FirebaseService {
       );
     });
 
-    // Begrenze die Gesamtanzahl der Ergebnisse
     if (sortedResults.length > limit) {
       sortedResults = sortedResults.take(limit).toList();
     }
 
-    // Konvertiere zu PriceEntry
     return sortedResults
         .map(
           (doc) =>
@@ -490,15 +445,10 @@ class FirebaseService {
         .toList();
   }
 
-  // Methode zum Abrufen *aller* Preis-Einträge für den aktuellen Monat
   Stream<List<PriceEntry>> getAllPricesForCurrentMonth() {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
-    final endOfMonth = DateTime(
-      now.year,
-      now.month + 1,
-      0,
-    ); // Letzter Tag des Monats
+    final endOfMonth = DateTime(now.year, now.month + 1, 0);
 
     final startTimestamp = Timestamp.fromDate(startOfMonth);
     final endTimestamp = Timestamp.fromDate(endOfMonth);
@@ -507,7 +457,7 @@ class FirebaseService {
         .collection(collectionName)
         .where('timestamp', isGreaterThanOrEqualTo: startTimestamp)
         .where('timestamp', isLessThanOrEqualTo: endTimestamp)
-        .orderBy('timestamp', descending: true); // Optional, für Anzeige
+        .orderBy('timestamp', descending: true);
 
     return query.snapshots().map((snapshot) {
       return snapshot.docs
@@ -519,7 +469,6 @@ class FirebaseService {
     });
   }
 
-  // Methode zum Abrufen *aller* Preis-Einträge des aktuellen Benutzers für einen Barcode
   Stream<List<PriceEntry>> getPriceEntriesForUserForBarcode(
     String userId,
     String barcode,

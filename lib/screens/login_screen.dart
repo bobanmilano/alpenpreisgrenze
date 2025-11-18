@@ -1,11 +1,10 @@
-// lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_price_tracker_app/screens/home_screen.dart';
 import 'package:my_price_tracker_app/screens/register_screen.dart';
 import 'package:my_price_tracker_app/main.dart';
-import 'package:my_price_tracker_app/theme/app_theme.dart'; // ✅ NEU HINZUGEFÜGT
+import 'package:my_price_tracker_app/theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -29,26 +28,22 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         title: Text('Anmelden'),
         centerTitle: true,
-        backgroundColor: AppColors.primary, // ✅ THEME FARBE
-        foregroundColor: Colors.white, // ✅ THEME FARBE
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         child: Container(
-          // <-- Dieses Container-Widget ...
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              // <-- ... hat diesen Verlauf als Dekoration
-              begin: Alignment.topCenter, // Startpunkt: Oben
-              end: Alignment.bottomCenter, // Endpunkt: Unten
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
               colors: [
-                theme.colorScheme.primaryContainer.withOpacity(
-                  0.2,
-                ), // Lila (leicht transparent)
-                theme.colorScheme.background, // Weiß (oder Hintergrundfarbe)
+                theme.colorScheme.primaryContainer.withOpacity(0.2),
+                theme.colorScheme.background,
               ],
             ),
           ),
-          padding: EdgeInsets.all(AppSpacing.m), // ✅ THEME ABSTAND
+          padding: EdgeInsets.all(AppSpacing.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -60,58 +55,54 @@ class _LoginScreenState extends State<LoginScreen> {
                     'assets/logos/aps.png',
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      // Fallback wenn Logo nicht geladen werden kann
                       return Icon(
                         Icons.account_circle,
                         size: 60,
-                        color: AppColors.primary, // ✅ THEME FARBE
+                        color: AppColors.primary,
                       );
                     },
                   ),
                 ),
               ),
-              SizedBox(height: AppSpacing.l), // ✅ THEME ABSTAND
+              SizedBox(height: AppSpacing.l),
               Center(
                 child: Text(
                   'Willkommen bei',
                   style: TextStyle(
-                    fontSize: AppTypography.headline3, // ✅ THEME TYPOGRAFIE
+                    fontSize: AppTypography.headline3,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary, // ✅ THEME FARBE
+                    color: AppColors.primary,
                   ),
                 ),
               ),
-              SizedBox(height: AppSpacing.s), // ✅ THEME ABSTAND
+              SizedBox(height: AppSpacing.s),
               Center(
                 child: Image.asset(
                   'assets/logos/alpenpreisgrenze-darklila.png',
-                  height: 60, // Passen Sie die Höhe an
+                  height: 60,
                 ),
               ),
-              SizedBox(height: AppSpacing.l), // ✅ THEME ABSTAND
+              SizedBox(height: AppSpacing.l),
               Text(
                 'Melden Sie sich an, um fortzufahren',
                 style: TextStyle(
-                  fontSize: AppTypography.bodyLarge, // ✅ THEME TYPOGRAFIE
-                  color: AppColors.textPrimary, // ✅ THEME FARBE
+                  fontSize: AppTypography.bodyLarge,
+                  color: AppColors.textPrimary,
                 ),
               ),
-              SizedBox(height: AppSpacing.xl), // ✅ THEME ABSTAND
-              // Login Form
+              SizedBox(height: AppSpacing.xl),
+
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    // Email Field
                     TextFormField(
                       decoration: InputDecoration(
                         labelText: 'E-Mail',
                         hintText: 'ihre.email@beispiel.de',
                         prefixIcon: Icon(Icons.email),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppRadius.large,
-                          ), // ✅ THEME RADIUS
+                          borderRadius: BorderRadius.circular(AppRadius.large),
                         ),
                       ),
                       validator: (value) {
@@ -125,17 +116,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                       onSaved: (value) => _email = value!,
                     ),
-                    SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
-                    // Password Field
+                    SizedBox(height: AppSpacing.m),
+
                     TextFormField(
                       decoration: InputDecoration(
                         labelText: 'Passwort',
                         hintText: '••••••••',
                         prefixIcon: Icon(Icons.lock),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppRadius.large,
-                          ), // ✅ THEME RADIUS
+                          borderRadius: BorderRadius.circular(AppRadius.large),
                         ),
                       ),
                       obscureText: true,
@@ -150,49 +139,37 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                       onSaved: (value) => _password = value!,
                     ),
-                    SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
-                    // Error Message
+                    SizedBox(height: AppSpacing.xxl),
+
                     if (_error.isNotEmpty)
                       Container(
-                        padding: EdgeInsets.all(
-                          AppSpacing.s,
-                        ), // ✅ THEME ABSTAND
+                        padding: EdgeInsets.all(AppSpacing.s),
                         decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(
-                            0.1,
-                          ), // ✅ THEME FARBE
-                          borderRadius: BorderRadius.circular(
-                            AppRadius.medium,
-                          ), // ✅ THEME RADIUS
+                          color: AppColors.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.medium),
                           border: Border.all(
-                            color: AppColors.error.withOpacity(
-                              0.3,
-                            ), // ✅ THEME FARBE
+                            color: AppColors.error.withOpacity(0.3),
                           ),
                         ),
                         child: Text(
                           _error,
-                          style: TextStyle(
-                            color: AppColors.error,
-                          ), // ✅ THEME FARBE
+                          style: TextStyle(color: AppColors.error),
                         ),
                       ),
-                    SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
-                    // Login Button
+                    SizedBox(height: AppSpacing.m),
+
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _loading ? null : _handleLogin,
                         style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(
-                            vertical: AppSpacing.m,
-                          ), // ✅ THEME ABSTAND
+                          padding: EdgeInsets.symmetric(vertical: AppSpacing.m),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                               AppRadius.large,
-                            ), // ✅ THEME RADIUS
+                            ),
                           ),
-                          backgroundColor: AppColors.accent, // ✅ THEME FARBE
+                          backgroundColor: AppColors.accent,
                           foregroundColor: Colors.white,
                         ),
                         child: _loading
@@ -200,8 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             : Text(
                                 'Anmelden',
                                 style: TextStyle(
-                                  fontSize:
-                                      AppTypography.body, // ✅ THEME TYPOGRAFIE
+                                  fontSize: AppTypography.body,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -211,8 +187,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
-              // Register Link
+              SizedBox(height: AppSpacing.xxl),
+
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -224,14 +200,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Text.rich(
                     TextSpan(
                       text: 'Noch keinen Account? ',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                      ), // ✅ THEME FARBE
+                      style: TextStyle(color: AppColors.textSecondary),
                       children: [
                         TextSpan(
                           text: 'Registrieren',
                           style: TextStyle(
-                            color: AppColors.primary, // ✅ THEME FARBE
+                            color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -241,31 +215,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
-              // Info Card
+              SizedBox(height: AppSpacing.m),
+
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    AppRadius.large,
-                  ), // ✅ THEME RADIUS
+                  borderRadius: BorderRadius.circular(AppRadius.large),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.m), // ✅ THEME ABSTAND
+                  padding: EdgeInsets.all(AppSpacing.m),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.info,
-                        color: AppColors.primary, // ✅ THEME FARBE
-                        size: 24,
-                      ),
-                      SizedBox(width: AppSpacing.s), // ✅ THEME ABSTAND
+                      Icon(Icons.info, color: AppColors.primary, size: 24),
+                      SizedBox(width: AppSpacing.s),
                       Expanded(
                         child: Text(
                           'Ihre Daten sind sicher bei uns. Wir respektieren Ihre Privatsphäre.',
                           style: TextStyle(
-                            fontSize: AppTypography.body, // ✅ THEME TYPOGRAFIE
-                            color: AppColors.textPrimary, // ✅ THEME FARBE
+                            fontSize: AppTypography.body,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),

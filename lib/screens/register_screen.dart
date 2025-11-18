@@ -1,4 +1,3 @@
-// lib/screens/register_screen.dart
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -33,329 +32,321 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Registrieren'), 
+        title: Text('Registrieren'),
         centerTitle: true,
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.colorScheme.primaryContainer.withOpacity(0.2),
-              theme.colorScheme.background,
-            ],
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                theme.colorScheme.primaryContainer.withOpacity(0.2),
+                theme.colorScheme.background,
+              ],
+            ),
           ),
-        ),
-        padding: EdgeInsets.all(AppSpacing.m),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hero-Bild oder Icon
-            Center(
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(50),
+          padding: EdgeInsets.all(AppSpacing.m),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  child: Icon(
+                    Icons.person_add,
+                    size: 60,
+                    color: AppColors.primary,
+                  ),
                 ),
-                child: Icon(
-                  Icons.person_add,
-                  size: 60,
+              ),
+              SizedBox(height: AppSpacing.xxl),
+
+              Text(
+                'Konto erstellen',
+                style: TextStyle(
+                  fontSize: AppTypography.headline3,
+                  fontWeight: FontWeight.bold,
                   color: AppColors.primary,
                 ),
               ),
-            ),
-            SizedBox(height: AppSpacing.xxl),
+              SizedBox(height: AppSpacing.s),
 
-            // Hauptüberschrift
-            Text(
-              'Konto erstellen',
-              style: TextStyle(
-                fontSize: AppTypography.headline3,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+              Text(
+                'Erstellen Sie ein neues Konto',
+                style: TextStyle(
+                  fontSize: AppTypography.bodyLarge,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
-            SizedBox(height: AppSpacing.s),
+              SizedBox(height: AppSpacing.xxl),
 
-            Text(
-              'Erstellen Sie ein neues Konto',
-              style: TextStyle(
-                fontSize: AppTypography.bodyLarge,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: AppSpacing.xxl),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'Benutzername',
+                        hintText: 'Ihr gewünschter Benutzername',
+                        prefixIcon: Icon(Icons.person),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.large),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Bitte geben Sie einen Benutzernamen ein';
+                        }
+                        if (value.length < 3) {
+                          return 'Der Benutzername muss mindestens 3 Zeichen haben';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) => _username = value,
+                    ),
+                    SizedBox(height: AppSpacing.m),
 
-            // Register Form
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  // Username Field
-                  TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Benutzername',
-                      hintText: 'Ihr gewünschter Benutzername',
-                      prefixIcon: Icon(Icons.person),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.large),
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'E-Mail',
+                        hintText: 'ihre.email@beispiel.de',
+                        prefixIcon: Icon(Icons.email),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.large),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Bitte geben Sie Ihre E-Mail ein';
+                        }
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                          return 'Bitte geben Sie eine gültige E-Mail ein';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) => _email = value,
+                    ),
+                    SizedBox(height: AppSpacing.m),
+
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'Passwort',
+                        hintText:
+                            'Mindestens 8 Zeichen aus Buchstaben, Sonderzeichen und Zahlen',
+                        prefixIcon: Icon(Icons.lock),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.large),
+                        ),
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Bitte geben Sie ein Passwort ein';
+                        }
+
+                        if (value.length < 8) {
+                          return 'Das Passwort muss mindestens 8 Zeichen haben';
+                        }
+                        if (!value.contains(RegExp(r'[a-zA-Z]'))) {
+                          return 'Das Passwort muss mindestens einen Buchstaben enthalten';
+                        }
+                        if (!value.contains(RegExp(r'[0-9]'))) {
+                          return 'Das Passwort muss mindestens eine Zahl enthalten';
+                        }
+                        if (!value.contains(
+                          RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
+                        )) {
+                          return 'Das Passwort muss mindestens ein Sonderzeichen enthalten (!@#\$%^&* etc.)';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) => _password = value,
+                    ),
+                    SizedBox(height: AppSpacing.s),
+
+                    Container(
+                      padding: EdgeInsets.all(AppSpacing.s),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppRadius.medium),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Passwort-Anforderungen:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.xs),
+                          Text(
+                            '• Mindestens 8 Zeichen\n'
+                            '• Enthält Buchstaben\n'
+                            '• Enthält Zahlen\n'
+                            '• Enthält Sonderzeichen',
+                            style: TextStyle(
+                              fontSize: AppTypography.bodySmall,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Bitte geben Sie einen Benutzernamen ein';
-                      }
-                      if (value.length < 3) {
-                        return 'Der Benutzername muss mindestens 3 Zeichen haben';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) => _username = value,
-                  ),
-                  SizedBox(height: AppSpacing.m),
+                    SizedBox(height: AppSpacing.m),
 
-                  // Email Field
-                  TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'E-Mail',
-                      hintText: 'ihre.email@beispiel.de',
-                      prefixIcon: Icon(Icons.email),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.large),
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'Passwort bestätigen',
+                        hintText: 'Passwort erneut eingeben',
+                        prefixIcon: Icon(Icons.lock_outline),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.large),
+                        ),
                       ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Bitte bestätigen Sie Ihr Passwort';
+                        }
+                        if (_password != null && value != _password) {
+                          return 'Die Passwörter stimmen nicht überein';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) => _confirmPassword = value,
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Bitte geben Sie Ihre E-Mail ein';
-                      }
-                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                        return 'Bitte geben Sie eine gültige E-Mail ein';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) => _email = value,
-                  ),
-                  SizedBox(height: AppSpacing.m),
+                    SizedBox(height: AppSpacing.xxl),
 
-                  // Password Field - MIT VERBESSERTER VALIDIERUNG
-                  TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Passwort',
-                      hintText: 'Mindestens 8 Zeichen aus Buchstaben, Sonderzeichen und Zahlen',
-                      prefixIcon: Icon(Icons.lock),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.large),
-                      ),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Bitte geben Sie ein Passwort ein';
-                      }
-                      // VERBESSERTE Passwort-Validierung
-                      if (value.length < 8) {
-                        return 'Das Passwort muss mindestens 8 Zeichen haben';
-                      }
-                      if (!value.contains(RegExp(r'[a-zA-Z]'))) {
-                        return 'Das Passwort muss mindestens einen Buchstaben enthalten';
-                      }
-                      if (!value.contains(RegExp(r'[0-9]'))) {
-                        return 'Das Passwort muss mindestens eine Zahl enthalten';
-                      }
-                      if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
-                        return 'Das Passwort muss mindestens ein Sonderzeichen enthalten (!@#\$%^&* etc.)';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) => _password = value,
-                  ),
-                  SizedBox(height: AppSpacing.s),
-
-                  // INFO TEXT FÜR PASSWORT-ANFORDERUNGEN
-                  Container(
-                    padding: EdgeInsets.all(AppSpacing.s),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.medium),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Passwort-Anforderungen:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                    if (_error.isNotEmpty)
+                      Container(
+                        padding: EdgeInsets.all(AppSpacing.s),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.medium),
+                          border: Border.all(
+                            color: AppColors.error.withOpacity(0.3),
                           ),
                         ),
-                        SizedBox(height: AppSpacing.xs),
-                        Text(
-                          '• Mindestens 8 Zeichen\n'
-                          '• Enthält Buchstaben\n'
-                          '• Enthält Zahlen\n'
-                          '• Enthält Sonderzeichen',
+                        child: Text(
+                          _error,
+                          style: TextStyle(color: AppColors.error),
+                        ),
+                      ),
+                    SizedBox(height: AppSpacing.m),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _loading ? null : _handleRegister,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: AppSpacing.m),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.large,
+                            ),
+                          ),
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: _loading
+                            ? CircularProgressIndicator(color: Colors.white)
+                            : Text(
+                                'Konto erstellen',
+                                style: TextStyle(
+                                  fontSize: AppTypography.body,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: AppSpacing.xxl),
+
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text.rich(
+                    TextSpan(
+                      text: 'Bereits ein Konto? ',
+                      style: TextStyle(color: AppColors.textSecondary),
+                      children: [
+                        TextSpan(
+                          text: 'Anmelden',
                           style: TextStyle(
-                            fontSize: AppTypography.bodySmall,
-                            color: AppColors.textSecondary,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: AppSpacing.m),
-
-                  // Password Confirmation Field
-                  TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Passwort bestätigen',
-                      hintText: 'Passwort erneut eingeben',
-                      prefixIcon: Icon(Icons.lock_outline),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.large),
-                      ),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Bitte bestätigen Sie Ihr Passwort';
-                      }
-                      if (_password != null && value != _password) {
-                        return 'Die Passwörter stimmen nicht überein';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) => _confirmPassword = value,
-                  ),
-                  SizedBox(height: AppSpacing.xxl),
-
-                  // Error Message
-                  if (_error.isNotEmpty)
-                    Container(
-                      padding: EdgeInsets.all(AppSpacing.s),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(AppRadius.medium),
-                        border: Border.all(
-                          color: AppColors.error.withOpacity(0.3),
-                        ),
-                      ),
-                      child: Text(
-                        _error, 
-                        style: TextStyle(color: AppColors.error),
-                      ),
-                    ),
-                  SizedBox(height: AppSpacing.m),
-
-                  // Register Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _handleRegister,
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: AppSpacing.m),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.large),
-                        ),
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: _loading
-                          ? CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              'Konto erstellen',
-                              style: TextStyle(
-                                fontSize: AppTypography.body,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
 
-            SizedBox(height: AppSpacing.xxl),
+              SizedBox(height: AppSpacing.m),
 
-            // Login Link
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text.rich(
-                  TextSpan(
-                    text: 'Bereits ein Konto? ',
-                    style: TextStyle(color: AppColors.textSecondary),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.large),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.m),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextSpan(
-                        text: 'Anmelden',
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.security,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                          SizedBox(width: AppSpacing.s),
+                          Text(
+                            'Datenschutz',
+                            style: TextStyle(
+                              fontSize: AppTypography.body,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: AppSpacing.s),
+                      Text(
+                        'Ihre Daten werden sicher gespeichert und nicht an Dritte weitergegeben.',
                         style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
+                          fontSize: AppTypography.bodySmall,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-
-            SizedBox(height: AppSpacing.m),
-
-            // Info Card
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.large),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(AppSpacing.m),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.security,
-                          color: AppColors.primary,
-                          size: 24,
-                        ),
-                        SizedBox(width: AppSpacing.s),
-                        Text(
-                          'Datenschutz',
-                          style: TextStyle(
-                            fontSize: AppTypography.body,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: AppSpacing.s),
-                    Text(
-                      'Ihre Daten werden sicher gespeichert und nicht an Dritte weitergegeben.',
-                      style: TextStyle(
-                        fontSize: AppTypography.bodySmall,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-      )
     );
   }
 
-  // Füge diese Methode in deinen RegisterScreen hinzu
   Future<void> _testFirebase() async {
     try {
       print('Teste Firebase Core...');
@@ -375,7 +366,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  // VERBESSERTE Passwort-Stärke-Prüfung
   bool _isPasswordStrong(String password) {
     if (password.length < 8) return false;
     if (!password.contains(RegExp(r'[a-zA-Z]'))) return false;
@@ -392,7 +382,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       print('Eingegebene Daten - Email: $_email, Username: $_username');
 
-      // ZUSÄTZLICHE Passwort-Validierung
       if (_password != null && !_isPasswordStrong(_password!)) {
         setState(() {
           _error = 'Das Passwort erfüllt nicht die Sicherheitsanforderungen.';
@@ -419,7 +408,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         UserCredential? result;
 
-        // Versuche es mit Timeout
         await Future.any([
           FirebaseAuth.instance
               .createUserWithEmailAndPassword(
@@ -459,7 +447,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             );
           } catch (firestoreError) {
             print('Firestore Fehler: $firestoreError');
-            // Lösche den Auth-User wieder, wenn Firestore fehlschlägt
+
             await user.delete();
             rethrow;
           }
@@ -472,7 +460,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           } else if (e.code == 'invalid-email') {
             _error = 'Ungültige E-Mail-Adresse.';
           } else if (e.code == 'weak-password') {
-            _error = 'Das Passwort ist zu schwach. Bitte verwenden Sie ein stärkeres Passwort.';
+            _error =
+                'Das Passwort ist zu schwach. Bitte verwenden Sie ein stärkeres Passwort.';
           } else if (e.code == 'operation-not-allowed') {
             _error = 'E-Mail/Passwort-Anmeldung ist nicht aktiviert.';
           } else {

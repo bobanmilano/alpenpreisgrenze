@@ -1,4 +1,3 @@
-// lib/screens/add_price_screen.dart
 import 'package:flutter/material.dart';
 import 'package:my_price_tracker_app/models/price_entry.dart';
 import 'package:my_price_tracker_app/models/product.dart';
@@ -11,7 +10,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Hinzugefügt für Auth-Check
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddPriceScreen extends StatefulWidget {
   final String barcode;
@@ -31,7 +30,7 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
   final TextEditingController _quantityController = TextEditingController();
   final FirebaseService _firebaseService = FirebaseService();
   final FirebaseStorage _storage = FirebaseStorage.instance;
-  late String _userId; // Dynamische Benutzer-ID
+  late String _userId;
 
   final TextEditingController _cityController = TextEditingController();
   String? _selectedCountry;
@@ -39,7 +38,7 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
 
   List<String> _suggestions = [];
   bool _isSearching = false;
-  bool _isSaving = false; // ✅ Neuer Zustand: Speichervorgang läuft
+  bool _isSaving = false;
 
   File? _selectedImage;
 
@@ -61,6 +60,8 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
     'Hofer',
     'DM',
     'AldiSüd',
+    'Müller',
+    'Rossmann',
   ];
 
   @override
@@ -76,8 +77,7 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
   Future<void> _loadUserId() async {
     try {
       setState(() {
-        _userId = _firebaseService
-            .getCurrentUserId(); // Verwende die neue Methode
+        _userId = _firebaseService.getCurrentUserId();
       });
     } catch (e) {
       print('Fehler beim Abrufen der Benutzer-ID: $e');
@@ -246,7 +246,6 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
         return null;
       }
 
-      // Skalierung des Bildes
       img.Image resizedImage;
       if (originalImage.width > originalImage.height) {
         resizedImage = originalImage.width > 800
@@ -258,7 +257,6 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
             : originalImage;
       }
 
-      // Qualität anpassen
       int quality = 100;
       List<int> imageBytes = img.encodeJpg(resizedImage, quality: quality);
       File resizedFile = File(imageFile.path);
@@ -284,17 +282,16 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
   Future<String?> _uploadImage(File imageFile) async {
     try {
       print("DEBUG: _uploadImage Methode gestartet.");
-      // --- Neuer Debug-Check ---
+
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         print(
           "DEBUG: Kein authentifizierter Benutzer zum Zeitpunkt des Uploads!",
         );
-        return null; // oder handle den Fehler wie gewünscht
+        return null;
       } else {
         print("DEBUG: Authentifizierter Benutzer UID: ${user.uid}");
       }
-      // --- Ende neuer Debug-Check ---
 
       if (!imageFile.existsSync()) {
         print('Fehler: Die Datei zum Hochladen existiert nicht.');
@@ -332,25 +329,20 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
     }
   }
 
-  // lib/screens/add_price_screen.dart
-  // ... (anderer Code) ...
-
   Future<void> _savePrice() async {
     if (_isSaving) return;
 
-    // ✅ Zustand sofort ändern, bevor Validierung startet
     setState(() {
       _isSaving = true;
     });
 
     try {
-      // Grundlegende Validierungen
       if (_priceController.text.isEmpty) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Bitte gib einen Preis ein.')));
         setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
+          _isSaving = false;
         });
         return;
       }
@@ -360,7 +352,7 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
           SnackBar(content: Text('Bitte gib eine Menge ein (z.B. 400g).')),
         );
         setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
+          _isSaving = false;
         });
         return;
       }
@@ -372,7 +364,7 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
           SnackBar(content: Text('Bitte fülle alle Standortfelder aus.')),
         );
         setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
+          _isSaving = false;
         });
         return;
       }
@@ -385,23 +377,21 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text('Ungültiger Preis-Format.')));
         setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
+          _isSaving = false;
         });
         return;
       }
 
-      // --- NICHT normalisieren: quantity, country, barcode ---
       String quantity = _quantityController.text.trim();
       String country = _selectedCountry!;
       String barcode = widget.barcode;
-      // --- ENDE ---
 
       if (quantity.isEmpty) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Menge kann nicht leer sein.')));
         setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
+          _isSaving = false;
         });
         return;
       }
@@ -411,28 +401,25 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
           SnackBar(content: Text('Produktinformationen nicht verfügbar.')),
         );
         setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
+          _isSaving = false;
         });
         return;
       }
 
-      // --- Normalisieren für Speicherung und Duplikatsprüfung (nur store!) ---
       String normalizedStore = _selectedStore!.toLowerCase();
       String normalizedCity = _cityController.text.trim().toLowerCase();
       String normalizedProductName = (_product!.productName ?? 'Unbekannt')
           .toLowerCase();
       String? normalizedBrands = _product!.brands?.toLowerCase();
-      // --- ENDE ---
 
-      // ✅ Überprüfe, ob bereits ein Eintrag existiert - mit normalisiertem 'store'
-      final existingPriceEntry = await _firebaseService.getPriceEntryByUniqueKey(
-        barcode, // NICHT normalisiert
-        country, // NICHT normalisiert
-        normalizedStore, // <-- Normalisiert, weil in DB als Kleinbuchstaben gespeichert
-        quantity, // NICHT normalisiert
-      );
+      final existingPriceEntry = await _firebaseService
+          .getPriceEntryByUniqueKey(
+            barcode,
+            country,
+            normalizedStore,
+            quantity,
+          );
 
-      // --- NEU: Logik für das Überschreiben (Löschen & Neu-Anlegen) ---
       bool shouldOverride = false;
       String? existingDocId = null;
 
@@ -440,21 +427,16 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
         final existingPrice = existingPriceEntry.price;
         final existingTimestamp = existingPriceEntry.timestamp;
 
-        // Prüfe, ob der Eintrag älter als 6 Monate ist
         final sixMonthsAgo = DateTime.now().subtract(Duration(days: 183));
         final isOlderThanSixMonths = existingTimestamp.isBefore(sixMonthsAgo);
 
-        // Ausnahmen für AT und DE
         bool canOverride = false;
         if (country == 'Österreich' && price > existingPrice) {
-          // country NICHT normalisiert
-          canOverride = true; // AT: Neuer Preis ist höher
+          canOverride = true;
         } else if (country == 'Deutschland' && price < existingPrice) {
-          // country NICHT normalisiert
-          canOverride = true; // DE: Neuer Preis ist niedriger
+          canOverride = true;
         }
 
-        // Falls Überschreiben *nicht* erlaubt (z.B. niedriger Preis in AT)
         if (!isOlderThanSixMonths && !canOverride) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -464,32 +446,27 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
             ),
           );
           setState(() {
-            _isSaving = false; // ✅ Zustand zurücksetzen
+            _isSaving = false;
           });
           return;
         }
 
-        // Falls Überschreiben *erlaubt* ist (z.B. höherer Preis in AT oder älter als 6 Monate)
         if (isOlderThanSixMonths || canOverride) {
           shouldOverride = true;
-          existingDocId =
-              existingPriceEntry.id; // Hole die ID des bestehenden Dokuments
+          existingDocId = existingPriceEntry.id;
         }
       }
-      // --- ENDE NEU ---
 
-      // ✅ Nur wenn der Eintrag gemacht werden kann (und ggf. alter gelöscht wurde), fortfahren mit dem Bildupload
       if (_selectedImage == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Bitte gib ein Bild (Kamera, Galerie) an.')),
         );
         setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
+          _isSaving = false;
         });
         return;
       }
 
-      // ✅ Zeige Status: Bild wird hochgeladen
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Bild wird hochgeladen...')));
@@ -501,36 +478,30 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
           );
         }
         setState(() {
-          _isSaving = false; // ✅ Zustand zurücksetzen
+          _isSaving = false;
         });
         return;
       }
 
-      // ✅ Zeige Status: Preis wird gespeichert
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Preis wird gespeichert...')));
 
-      // ✅ Erstelle das neue Preis-Objekt mit den korrekten Werten
-      //     - NICHT-normalisierte Werte für barcode, country, quantity
-      //     - Normalisierte Werte für city, store, productName, brands
       final newPriceEntry = PriceEntry(
         id: '',
-        barcode: barcode, // NICHT normalisiert
-        productName:
-            normalizedProductName, // <- Verwende den normalisierten Wert
-        brands: normalizedBrands, // <- Optional, aber normalisiert
-        quantity: quantity, // <- NICHT normalisiert
+        barcode: barcode,
+        productName: normalizedProductName,
+        brands: normalizedBrands,
+        quantity: quantity,
         price: price,
         userId: _userId,
-        city: normalizedCity, // <- Verwende den normalisierten Wert
-        country: country, // <- NICHT normalisiert
-        store: normalizedStore, // <- Verwende den normalisierten Wert
+        city: normalizedCity,
+        country: country,
+        store: normalizedStore,
         productImageURL: productImageURL,
         timestamp: DateTime.now(),
       );
 
-      // --- NEU: Falls Überschreiben aktiviert, lösche zuerst den alten Eintrag ---
       if (shouldOverride && existingDocId != null) {
         try {
           await _firebaseService.deletePriceEntryById(existingDocId);
@@ -545,14 +516,12 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
             );
           }
           setState(() {
-            _isSaving = false; // ✅ Zustand zurücksetzen
+            _isSaving = false;
           });
           return;
         }
       }
-      // --- ENDE NEU ---
 
-      // ✅ Speichere das neue Preis-Objekt
       final savedId = await _firebaseService.savePriceEntry(newPriceEntry);
       if (savedId != null) {
         String message = 'Preis erfolgreich gespeichert!';
@@ -565,7 +534,6 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
         }
       } else {
         if (mounted) {
-          // Dieser Fall sollte jetzt unwahrscheinlicher sein, da wir vorher prüfen
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Fehler beim Speichern des neuen Preises.')),
           );
@@ -578,7 +546,6 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
         ).showSnackBar(SnackBar(content: Text('Fehler beim Speichern: $e')));
       }
     } finally {
-      // ✅ Zustand am Ende zurücksetzen
       if (mounted) {
         setState(() {
           _isSaving = false;
@@ -586,8 +553,6 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
       }
     }
   }
-
-  // ... (anderer Code) ...
 
   @override
   Widget build(BuildContext context) {
@@ -768,13 +733,10 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
                         ),
                       ),
                     SizedBox(height: 16),
-                    // ✅ Geänderter Speichern-Button
+
                     ElevatedButton(
-                      onPressed: _isSaving
-                          ? null
-                          : _savePrice, // ✅ Deaktiviert während Speichern
-                      child:
-                          _isSaving // ✅ Visuelle Reaktion
+                      onPressed: _isSaving ? null : _savePrice,
+                      child: _isSaving
                           ? Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -790,7 +752,7 @@ class _AddPriceScreenState extends State<AddPriceScreen> {
                                   ?.copyWith(color: AppColors.textSecondary),
                             ),
                     ),
-                    // ✅ Status-Text unten
+
                     if (_isSaving)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),

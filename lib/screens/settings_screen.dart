@@ -1,4 +1,3 @@
-// lib/screens/settings_screen.dart
 import 'dart:async';
 import 'dart:io';
 
@@ -13,7 +12,8 @@ import 'package:my_price_tracker_app/screens/login_screen.dart'
     show LoginScreen;
 import 'package:my_price_tracker_app/screens/profile_edit_screen.dart';
 import 'package:my_price_tracker_app/theme/app_theme.dart';
-import 'package:my_price_tracker_app/theme/app_theme_config.dart' hide AppColors; // Importieren Sie das Theme
+import 'package:my_price_tracker_app/theme/app_theme_config.dart'
+    hide AppColors;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -22,7 +22,6 @@ final navigatorKey = GlobalKey<NavigatorState>();
 class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Verwende das Custom-Styling
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
@@ -45,7 +44,6 @@ class SettingsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Profil-Bereich
               _buildSectionHeader(context, 'Profil'),
               _buildSettingsCard(
                 context,
@@ -62,7 +60,7 @@ class SettingsScreen extends StatelessWidget {
                 },
               ),
               SizedBox(height: AppSpacing.m),
-              // App-Einstellungen
+
               _buildSectionHeader(context, 'App-Einstellungen'),
               _buildSettingsCard(
                 context,
@@ -70,7 +68,6 @@ class SettingsScreen extends StatelessWidget {
                 title: 'Darstellung',
                 subtitle: 'Dark/Light Mode',
                 onTap: () {
-                  // TODO: Theme-Switcher implementieren
                   _showFeatureComingSoon(context);
                 },
               ),
@@ -81,12 +78,11 @@ class SettingsScreen extends StatelessWidget {
                 title: 'Sprache',
                 subtitle: 'App-Sprache ändern',
                 onTap: () {
-                  // TODO: Sprachauswahl implementieren
                   _showFeatureComingSoon(context);
                 },
               ),
               SizedBox(height: AppSpacing.m),
-              // Rechtliches
+
               _buildSectionHeader(context, 'Rechtliches'),
               _buildSettingsCard(
                 context,
@@ -135,7 +131,7 @@ class SettingsScreen extends StatelessWidget {
                 },
               ),
               SizedBox(height: AppSpacing.m),
-              // Account-Aktionen
+
               _buildSectionHeader(context, 'Account'),
               _buildSettingsCard(
                 context,
@@ -160,7 +156,7 @@ class SettingsScreen extends StatelessWidget {
                 isDanger: true,
               ),
               SizedBox(height: AppSpacing.xxl),
-              // App-Informationen
+
               _buildAppInfoSection(context),
             ],
           ),
@@ -169,7 +165,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Header für Einstellungsabschnitte
   Widget _buildSectionHeader(BuildContext context, String title) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
@@ -186,7 +181,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Einstellungs-Karte
   Widget _buildSettingsCard(
     BuildContext context, {
     required IconData icon,
@@ -297,7 +291,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Feature coming soon Dialog
   void _showFeatureComingSoon(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
@@ -335,7 +328,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Methode zum Ausloggen
   void _showLogoutDialog(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
@@ -424,11 +416,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Account-Löschungsdialog
   void _showDeleteAccountDialog(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
     showDialog(
       context: context,
       builder: (context) {
@@ -445,437 +433,8 @@ class SettingsScreen extends StatelessWidget {
       },
     );
   }
-
-  Future<void> _deleteUserAccount(BuildContext context) async {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
-
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    BuildContext? dialogContext;
-
-    try {
-      final Completer<void> dialogCompleter = Completer<void>();
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext buildContext) {
-          dialogContext = buildContext;
-          return WillPopScope(
-            onWillPop: () async => false,
-            child: AlertDialog(
-              title: Text(
-                'Lösche Account...',
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              content: Row(
-                children: [
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      theme.colorScheme.primary,
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.s),
-                  Text(
-                    'Bitte warten...',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ).then((_) => dialogCompleter.complete());
-
-      await Future.delayed(Duration(milliseconds: 100));
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .delete();
-
-      bool deletionSuccessful = false;
-      bool requiresReauth = false;
-
-      try {
-        final freshUser = FirebaseAuth.instance.currentUser;
-        if (freshUser != null) {
-          await freshUser.delete();
-          deletionSuccessful = true;
-        }
-      } on FirebaseAuthException catch (authError) {
-        if (authError.code == 'requires-recent-login') {
-          requiresReauth = true;
-        } else {
-          rethrow;
-        }
-      }
-
-      if (dialogContext != null && dialogContext!.mounted) {
-        Navigator.of(dialogContext!, rootNavigator: true).pop();
-      } else if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-
-      await dialogCompleter.future;
-
-      if (requiresReauth) {
-        final bool reauthSuccess = await _showReauthenticateDialog(context);
-
-        if (reauthSuccess) {
-          final Completer<void> secondDialogCompleter = Completer<void>();
-
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext buildContext) {
-              return WillPopScope(
-                onWillPop: () async => false,
-                child: AlertDialog(
-                  title: Text(
-                    'Lösche Account...',
-                    style: textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  content: Row(
-                    children: [
-                      CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          theme.colorScheme.primary,
-                        ),
-                      ),
-                      SizedBox(width: AppSpacing.s),
-                      Text(
-                        'Bitte warten...',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ).then((_) => secondDialogCompleter.complete());
-
-          await Future.delayed(Duration(milliseconds: 100));
-
-          final secondUser = FirebaseAuth.instance.currentUser;
-          if (secondUser != null) {
-            await secondUser.delete();
-          }
-
-          if (context.mounted) {
-            Navigator.of(context, rootNavigator: true).pop();
-          }
-
-          await secondDialogCompleter.future;
-
-          deletionSuccessful = true;
-        } else {
-          return;
-        }
-      }
-
-      if (deletionSuccessful) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Account erfolgreich gelöscht. Bewertungen bleiben anonym erhalten.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onPrimary,
-                ),
-              ),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
-
-        await Future.delayed(Duration(seconds: 2));
-
-        try {
-          SystemNavigator.pop();
-        } catch (e) {
-          print('Fehler beim Schließen der App: $e');
-          try {
-            if (Platform.isAndroid) {
-              SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-            }
-          } catch (fallbackError) {
-            print('Fallback Fehler: $fallbackError');
-            if (Platform.isAndroid) {
-              exit(0);
-            }
-          }
-        }
-
-        if (context.mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => LoginScreen()),
-            (route) => false,
-          );
-        }
-      }
-    } catch (e) {
-      try {
-        if (dialogContext != null && dialogContext!.mounted) {
-          Navigator.of(dialogContext!, rootNavigator: true).pop();
-        } else if (context.mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
-        }
-      } catch (_) {}
-
-      if (context.mounted) {
-        String errorMessage = 'Fehler beim Löschen des Accounts';
-
-        if (e is FirebaseAuthException) {
-          switch (e.code) {
-            case 'requires-recent-login':
-              errorMessage =
-                  'Sie müssen sich erneut anmelden, um den Account zu löschen';
-              break;
-            case 'user-not-found':
-              errorMessage = 'Benutzer nicht gefunden';
-              break;
-            default:
-              errorMessage = e.message ?? 'Unbekannter Fehler beim Löschen';
-          }
-        } else {
-          errorMessage = e.toString().contains(': ')
-              ? e.toString().split(': ').last
-              : e.toString();
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              errorMessage,
-              style: textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onPrimary,
-              ),
-            ),
-            backgroundColor: theme.colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
-
-  // Re-Authentifizierungsdialog
-  Future<bool> _showReauthenticateDialog(BuildContext context) async {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    final TextEditingController _passwordController = TextEditingController();
-    final Completer<bool> completer = Completer<bool>();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(
-            'Erneute Anmeldung erforderlich',
-            style: textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Aus Sicherheitsgründen müssen Sie sich erneut anmelden, um Ihren Account zu löschen.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              SizedBox(height: AppSpacing.m),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Passwort',
-                  prefixIcon: Icon(
-                    Icons.lock,
-                    color: theme.colorScheme.primary,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.medium),
-                  ),
-                ),
-                obscureText: true,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                completer.complete(false);
-              },
-              child: Text(
-                'Abbrechen',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (_passwordController.text.isEmpty) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Bitte geben Sie Ihr Passwort ein',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onPrimary,
-                        ),
-                      ),
-                      backgroundColor: theme.colorScheme.error,
-                    ),
-                  );
-                  return;
-                }
-
-                Navigator.pop(dialogContext);
-
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (BuildContext progressDialogContext) {
-                    return AlertDialog(
-                      title: Text(
-                        'Anmeldung...',
-                        style: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      content: Row(
-                        children: [
-                          CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colorScheme.primary,
-                            ),
-                          ),
-                          SizedBox(width: AppSpacing.s),
-                          Text(
-                            'Bitte warten...',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-
-                try {
-                  final User? user = FirebaseAuth.instance.currentUser;
-                  if (user != null && user.email != null) {
-                    final credential = EmailAuthProvider.credential(
-                      email: user.email!,
-                      password: _passwordController.text,
-                    );
-
-                    await user.reauthenticateWithCredential(credential);
-
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
-                    }
-
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Erfolgreich angemeldet.',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                          backgroundColor: AppColors.success,
-                        ),
-                      );
-                    }
-
-                    completer.complete(true);
-                  } else {
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
-                    }
-                    completer.complete(false);
-                  }
-                } catch (e) {
-                  try {
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
-                    }
-                  } catch (_) {}
-
-                  if (context.mounted) {
-                    String errorMessage = 'Fehler bei der Anmeldung';
-                    if (e is FirebaseAuthException) {
-                      if (e.code == 'wrong-password') {
-                        errorMessage = 'Falsches Passwort';
-                      } else if (e.code == 'user-not-found') {
-                        errorMessage = 'User nicht gefunden';
-                      } else {
-                        errorMessage = e.message ?? 'Anmeldefehler';
-                      }
-                    } else {
-                      errorMessage = e.toString().contains(': ')
-                          ? e.toString().split(': ').last
-                          : 'Anmeldefehler';
-                    }
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          errorMessage,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimary,
-                          ),
-                        ),
-                        backgroundColor: theme.colorScheme.error,
-                      ),
-                    );
-                  }
-
-                  completer.complete(false);
-                }
-              },
-              child: Text(
-                'Anmelden',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    completer.future.whenComplete(() {
-      _passwordController.dispose();
-    });
-
-    return completer.future;
-  }
 }
 
-// Separate Dialog-Klasse für die Account-Löschung
 class DeleteAccountDialog extends StatefulWidget {
   final Function()? onDeleteConfirmed;
 
@@ -967,7 +526,7 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
             TextField(
               controller: _confirmationController,
               decoration: InputDecoration(
-                labelText: 'Geben Sie "LÖSCHEN" ein, um zu bestätigen',
+                labelText: 'Geben Sie "delete" ein, um zu bestätigen',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.medium),
                 ),
@@ -988,7 +547,7 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
         ),
         TextButton(
           onPressed: () {
-            if (_confirmationController.text.trim() == 'LÖSCHEN') {
+            if (_confirmationController.text.trim() == 'delete') {
               Navigator.pop(context);
               if (widget.onDeleteConfirmed != null) {
                 widget.onDeleteConfirmed!();
@@ -997,7 +556,7 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Bitte geben Sie "LÖSCHEN" ein, um zu bestätigen',
+                    'Bitte geben Sie "delete" ein, um zu bestätigen',
                     style: textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onPrimary,
                     ),

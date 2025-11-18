@@ -6,16 +6,17 @@ import 'package:my_price_tracker_app/models/product.dart';
 import 'package:my_price_tracker_app/screens/comparison_screen.dart';
 import 'package:my_price_tracker_app/services/openfoodfacts_service.dart';
 import 'package:my_price_tracker_app/theme/app_theme.dart';
-import 'package:my_price_tracker_app/theme/app_theme_config.dart'; // Importieren Sie das Theme
+import 'package:my_price_tracker_app/theme/app_theme_config.dart';
+import 'package:my_price_tracker_app/utils/app_constants.dart';
 import 'package:my_price_tracker_app/utils/string_utils.dart';
 import 'scan_screen.dart';
 import 'settings_screen.dart';
-import 'scanned_prices_screen.dart'; // Importieren Sie den neuen Screen
+import 'scanned_prices_screen.dart';
 import 'about_screen.dart';
-// --- NEU: Importiere FirebaseService und deine Preis-Utils ---
+
 import '../services/firebase_service.dart';
 import '../models/price_entry.dart';
-import '../utils/price_utils.dart'; // Stelle sicher, dass deine Hilfsfunktionen verfügbar sind
+import '../utils/price_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -28,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     _HomePageContent(),
     ScanScreen(),
-    ScannedPricesScreen(), // NEU: History-Tab hinzugefügt
+    ScannedPricesScreen(),
     SettingsScreen(),
     AboutScreen(),
   ];
@@ -39,10 +40,8 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
-    // Verwende das Theme
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -54,10 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(CommunityMaterialIcons.barcode_scan),
             label: 'Scannen',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history), // NEU: History-Icon
-            label: 'Verlauf',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Verlauf'),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Einstellungen',
@@ -68,14 +64,13 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onItemTapped,
         selectedItemColor: theme.colorScheme.primary,
         unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.6),
-        type: BottomNavigationBarType.fixed, // Für mehr als 3 Items
+        type: BottomNavigationBarType.fixed,
         backgroundColor: theme.colorScheme.background,
       ),
     );
   }
 }
 
-// --- ANPASSUNG: Neuer Inhalt für die Startseite ---
 class _HomePageContent extends StatefulWidget {
   @override
   __HomePageContentState createState() => __HomePageContentState();
@@ -94,26 +89,22 @@ class __HomePageContentState extends State<_HomePageContent> {
   String? _topAtQuantity;
   double? _topDePrice;
   String? _topDeStore;
-  String? _topDeCity; // <--- NEU
-  String? _topDeQuantity; // <--- NEU
+  String? _topDeCity;
+  String? _topDeQuantity;
   double? _topPercentageDiff;
   String? _topDisplayUnit;
-  String? _topProductImageUrl; // <--- NEU: Produktbild-URL
-
+  String? _topProductImageUrl;
 
   String _getDisplayString(String? input) {
-    if (input == null) return 'Unbekannt'; // oder wie auch immer du mit null umgehst
-  return toProperCase(input);
+    if (input == null) return 'Unbekannt';
+    return toProperCase(input);
   }
 
-  // Methode zum Aktualisieren der user_ids
   Future<void> updateUserIds(BuildContext context) async {
     try {
-      // Hole die aktuelle userId des angemeldeten Benutzers
       final String newUserId =
           FirebaseAuth.instance.currentUser?.uid ?? 'UNKNOWN_USER_ID';
 
-      // Hole alle Einträge mit der alten test_user_id
       final QuerySnapshot querySnapshot = await firestore
           .collection('prices')
           .where('user_id', isNotEqualTo: newUserId)
@@ -128,7 +119,6 @@ class __HomePageContentState extends State<_HomePageContent> {
         return;
       }
 
-      // Durchlaufe alle gefundenen Dokumente und aktualisiere die user_id
       for (final doc in querySnapshot.docs) {
         final docId = doc.id;
         await firestore.collection('prices').doc(docId).update({
@@ -150,10 +140,8 @@ class __HomePageContentState extends State<_HomePageContent> {
     }
   }
 
-  // Methode zum Löschen alter Einträge
   Future<void> deleteOldEntries(BuildContext context) async {
     try {
-      // Hole alle Einträge mit der alten test_user_id
       final QuerySnapshot querySnapshot = await firestore
           .collection('prices')
           .where('user_id', isEqualTo: 'test_user_id')
@@ -166,7 +154,6 @@ class __HomePageContentState extends State<_HomePageContent> {
         return;
       }
 
-      // Durchlaufe alle gefundenen Dokumente und lösche sie
       for (final doc in querySnapshot.docs) {
         final docId = doc.id;
         await firestore.collection('prices').doc(docId).delete();
@@ -186,20 +173,19 @@ class __HomePageContentState extends State<_HomePageContent> {
     }
   }
 
-  // NEU: Methode zum Berechnen des Top-Unterschieds
   void _calculateTopDifference() {
     _firebaseService.getAllPricesForCurrentMonth().listen((allPrices) {
       if (allPrices.isEmpty) {
         setState(() {
-          _topProductBarcode = null; // <--- Zurücksetzen
+          _topProductBarcode = null;
           _topProductName = null;
           _topAtPrice = null;
           _topAtStore = null;
-          _topAtCity = null; // <--- NEU
-          _topAtQuantity = null; // <--- NEU
+          _topAtCity = null;
+          _topAtQuantity = null;
           _topDePrice = null;
           _topDeStore = null;
-          _topDeCity = null; // <--- NEU
+          _topDeCity = null;
           _topDeQuantity = null;
           _topPercentageDiff = null;
           _topDisplayUnit = null;
@@ -209,7 +195,6 @@ class __HomePageContentState extends State<_HomePageContent> {
         return;
       }
 
-      // Gruppiere Preise nach Barcode
       Map<String, List<PriceEntry>> pricesByBarcode = {};
       for (var priceEntry in allPrices) {
         String barcode = priceEntry.barcode;
@@ -219,7 +204,7 @@ class __HomePageContentState extends State<_HomePageContent> {
       double maxDiff = 0;
       PriceEntry? topAtPrice;
       PriceEntry? topDePrice;
-      String? topBarcode; // <--- NEU: Barcode temporär speichern
+      String? topBarcode;
       String? topDisplayUnit;
 
       for (var entry in pricesByBarcode.entries) {
@@ -276,26 +261,20 @@ class __HomePageContentState extends State<_HomePageContent> {
           maxDiff = currentDiff;
           topAtPrice = currentAtPrice;
           topDePrice = currentDePrice;
-          topBarcode = currentAtPrice
-              .barcode; // <--- Barcode des aktuellen Produkts speichern
+          topBarcode = currentAtPrice.barcode;
           topDisplayUnit = getDisplayUnit(atProductWeight);
 
-          // --- NEU: Speichere auch Stadt und Menge ---
           _topAtCity = currentAtPrice.city;
           _topDeCity = currentDePrice.city;
           _topAtQuantity = currentAtPrice.quantity;
           _topDeQuantity = currentDePrice.quantity;
-          _topProductImageUrl = currentAtPrice
-              .productImageURL; // Oder wie heißt das Feld in PriceEntry?
-
-          // --- ENDE NEU ---
+          _topProductImageUrl = currentAtPrice.productImageURL;
         }
       }
 
       setState(() {
         if (topAtPrice != null && topDePrice != null && topBarcode != null) {
-          // <--- topBarcode prüfen
-          _topProductBarcode = topBarcode; // <--- Zustandsvariable setzen
+          _topProductBarcode = topBarcode;
           _topProductName = topAtPrice.productName;
           _topAtPrice = topAtPrice.price;
           _topAtStore = topAtPrice.store;
@@ -303,23 +282,23 @@ class __HomePageContentState extends State<_HomePageContent> {
           _topDeStore = topDePrice.store;
           _topPercentageDiff = maxDiff;
           _topDisplayUnit = topDisplayUnit ?? 'Stück';
-          _isLoadingTopProduct = false; // <-- Setze auf false, wenn keine Daten
+          _isLoadingTopProduct = false;
         } else {
-          _topProductBarcode = null; // <--- Zurücksetzen
+          _topProductBarcode = null;
           _topProductName = null;
           _topAtPrice = null;
           _topAtStore = null;
-          _topAtCity = null; // <--- NEU
-          _topAtQuantity = null; // <--- NEU
+          _topAtCity = null;
+          _topAtQuantity = null;
           _topDePrice = null;
           _topDeStore = null;
-          _topDeCity = null; // <--- NEU
-          _topDeQuantity = null; // <--- NEU
+          _topDeCity = null;
+          _topDeQuantity = null;
           _topPercentageDiff = null;
           _topDisplayUnit = null;
           _topProductImageUrl = null;
         }
-        _isLoadingTopProduct = false; // <-- Setze auf false, wenn Daten da
+        _isLoadingTopProduct = false;
       });
     });
   }
@@ -334,30 +313,25 @@ class __HomePageContentState extends State<_HomePageContent> {
     _calculateTopDifference();
   }
 
-  // --- NEU: Methode zum Normalisieren von Strings ---
   Future<void> _normalizeStrings(BuildContext context) async {
     int updatedCount = 0;
     int totalCount = 0;
 
     try {
-      // Hole alle Dokumente aus der 'prices'-Collection
       final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('prices')
           .get();
 
       totalCount = querySnapshot.docs.length;
 
-      // Durchlaufe alle Dokumente
       for (final doc in querySnapshot.docs) {
         final docId = doc.id;
         final data = doc.data();
 
-        // Prüfe, ob data ein Map ist
         if (data is Map<String, dynamic>) {
           bool needsUpdate = false;
           Map<String, dynamic> updateData = {};
 
-          // --- 1. Prüfe 'city' ---
           final city = data['city'];
           if (city != null && city is String) {
             final lowerCity = city.toLowerCase();
@@ -367,7 +341,6 @@ class __HomePageContentState extends State<_HomePageContent> {
             }
           }
 
-          // --- 2. Prüfe 'productName' ---
           final productName = data['product_name'];
           if (productName != null && productName is String) {
             final lowerProductName = productName.toLowerCase();
@@ -377,7 +350,6 @@ class __HomePageContentState extends State<_HomePageContent> {
             }
           }
 
-          // --- 3. Prüfe 'store' ---
           final store = data['store'];
           if (store != null && store is String) {
             final lowerStore = store.toLowerCase();
@@ -387,7 +359,6 @@ class __HomePageContentState extends State<_HomePageContent> {
             }
           }
 
-          // --- 4. Update nur, wenn Änderungen vorliegen ---
           if (needsUpdate) {
             await FirebaseFirestore.instance
                 .collection('prices')
@@ -398,7 +369,6 @@ class __HomePageContentState extends State<_HomePageContent> {
         }
       }
 
-      // Zeige eine Erfolgsmeldung
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -407,7 +377,6 @@ class __HomePageContentState extends State<_HomePageContent> {
         ),
       );
     } catch (e) {
-      // Zeige eine Fehlermeldung
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Fehler beim Normalisieren der Strings: $e')),
       );
@@ -416,24 +385,19 @@ class __HomePageContentState extends State<_HomePageContent> {
 
   @override
   Widget build(BuildContext context) {
-    // Verwende das Custom-Styling
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
-    // Hole die aktuelle Firebase UID
     final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset(
-          'assets/logos/alpenpreisgrenze.png',
-          height: 60, // Passen Sie die Höhe an
-        ),
+        title: Image.asset('assets/logos/alpenpreisgrenze.png', height: 60),
         centerTitle: true,
         backgroundColor: theme.colorScheme.primary,
         elevation: 0,
       ),
-      // --- NEU: SingleChildScrollView hinzugefügt ---
+
       body: SingleChildScrollView(
         child: Container(
           decoration: BoxDecoration(
@@ -446,13 +410,10 @@ class __HomePageContentState extends State<_HomePageContent> {
               ],
             ),
           ),
-          // --- Optional: Padding entfernen oder anpassen, da SingleChildScrollView den Inhalt scrollen lässt ---
+
           child: Padding(
             padding: EdgeInsets.all(AppSpacing.m),
             child: Column(
-              // --- BEHAELT: mainAxisAlignment: MainAxisAlignment.center ---
-              // Dies zentriert den Inhalt VOR dem Scrollen, wenn genug Platz ist.
-              // Wenn der Inhalt zu lang ist, scrollt der SingleChildScrollView.
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -501,20 +462,18 @@ class __HomePageContentState extends State<_HomePageContent> {
                   context,
                   theme,
                 ),
-                // --- NEU: Karte für den Top-Unterschied mit Tap-Handler und erweiterten Daten + Ladeanimation ---
+
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.m),
                   child: Container(
                     margin: EdgeInsets.zero,
                     child: Padding(
                       padding: EdgeInsets.all(AppSpacing.s),
-                      child:
-                          _isLoadingTopProduct // <-- Prüfe den Ladezustand
+                      child: _isLoadingTopProduct
                           ? Center(
-                              // <-- Zentriere das Lade-Widget
                               child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  theme.colorScheme.primary, // Lila Farbe
+                                  theme.colorScheme.primary,
                                 ),
                               ),
                             )
@@ -523,15 +482,9 @@ class __HomePageContentState extends State<_HomePageContent> {
                                 _topDePrice != null &&
                                 _topPercentageDiff != null &&
                                 _topProductBarcode != null
-                          ? // <-- Zeige Karte, wenn Daten da und nicht geladen
-                            GestureDetector(
-                              // <--- GestureDetector hinzufügen
+                          ? GestureDetector(
                               onTap: () async {
-                                // <--- NEU: async onTap-BLOCK
-                                // Zeige Ladeanzeige (optional, z.B. mit einem SnackBar)
-                                // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lade Produkt...')));
                                 try {
-                                  // Lade das vollständige Produktobjekt
                                   final Product loadedProduct =
                                       await OpenFoodFactsService.fetchProduct(
                                         _topProductBarcode!,
@@ -541,13 +494,11 @@ class __HomePageContentState extends State<_HomePageContent> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => ComparisonScreen(
-                                          product:
-                                              loadedProduct, // <--- GELADENES OBJEKT ÜBERGEBEN
+                                          product: loadedProduct,
                                         ),
                                       ),
                                     );
                                   } else {
-                                    // Fehler: Produkt konnte nicht geladen werden
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -557,7 +508,6 @@ class __HomePageContentState extends State<_HomePageContent> {
                                     );
                                   }
                                 } catch (e) {
-                                  // Fehler beim Laden abfangen
                                   print(
                                     "Fehler beim Laden des Produkts aus OpenFoodFacts: $e",
                                   );
@@ -597,13 +547,13 @@ class __HomePageContentState extends State<_HomePageContent> {
                                             children: [
                                               Expanded(
                                                 child: Text(
-                                                  'Produkt: ${_getDisplayString(_topProductName)}',
+                                                  'Produkt: ${_getDisplayString(_topAtQuantity)} ${_getDisplayString(_topProductName)}',
                                                   style: Theme.of(
                                                     context,
                                                   ).textTheme.titleMedium,
                                                 ),
                                               ),
-                                              // Klickbarkeits-Hinweis (Pfeil)
+
                                               Icon(
                                                 Icons.arrow_forward_ios,
                                                 size: 16,
@@ -619,17 +569,60 @@ class __HomePageContentState extends State<_HomePageContent> {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
+                                              if (_topProductImageUrl != null)
+                                                Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: AppSpacing.s,
+                                                  ),
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8.0,
+                                                        ),
+                                                    child: Image.network(
+                                                      _topProductImageUrl!,
+                                                      width: 60,
+                                                      height: 60,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder:
+                                                          (
+                                                            context,
+                                                            error,
+                                                            stackTrace,
+                                                          ) {
+                                                            return Icon(
+                                                              Icons
+                                                                  .image_not_supported,
+                                                              size: 40,
+                                                              color:
+                                                                  Colors.grey,
+                                                            );
+                                                          },
+                                                    ),
+                                                  ),
+                                                )
+                                              else
+                                                Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: AppSpacing.s,
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.image_not_supported,
+                                                    size: 40,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
                                               Expanded(
                                                 child: Column(
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.start,
                                                   children: [
-                                                    // Fahne und Stadtname oben
                                                     Row(
                                                       mainAxisAlignment:
                                                           MainAxisAlignment
                                                               .start,
                                                       children: [
+                                                        SizedBox(width: 20),
                                                         Image.asset(
                                                           'assets/logos/at-fahne.png',
                                                           width: 24,
@@ -647,27 +640,29 @@ class __HomePageContentState extends State<_HomePageContent> {
                                                               },
                                                         ),
                                                         SizedBox(width: 8),
-                                                        // Dynamischer Stadtname mit ValueListenableBuilder
+
                                                         if (_topAtCity != null)
                                                           Text(
                                                             '${_getDisplayString(_topAtCity)}',
                                                             style: TextStyle(
-                                                              fontSize: 12,
+                                                              fontSize: 14,
                                                               color: Colors
                                                                   .grey[800],
                                                             ),
                                                           ),
                                                       ],
                                                     ),
+                                                    SizedBox(height: AppSpacing.xs),
                                                     Padding(
                                                       padding: EdgeInsets.only(
                                                         left: 20.0,
-                                                      ), // Abstand von links
+                                                      ),
                                                       child: RichText(
                                                         text: TextSpan(
-                                                          style: DefaultTextStyle.of(
-                                                            context,
-                                                          ).style, // Standardstil des Widgets
+                                                          style:
+                                                              DefaultTextStyle.of(
+                                                                context,
+                                                              ).style,
                                                           children: <TextSpan>[
                                                             TextSpan(
                                                               text:
@@ -679,13 +674,13 @@ class __HomePageContentState extends State<_HomePageContent> {
                                                                             .titleLarge
                                                                             ?.fontSize ??
                                                                         18) *
-                                                                    1.5, // 1.5-fache Größe
+                                                                    1.5,
                                                                 fontWeight:
                                                                     FontWeight
-                                                                        .bold, // Fett
-                                                                color: Theme.of(context)
-                                                                    .colorScheme
-                                                                    .onSurface, // Farbe an Theme anpassen
+                                                                        .bold,
+                                                                color: Theme.of(
+                                                                  context,
+                                                                ).colorScheme.onSurface,
                                                               ),
                                                             ),
                                                             TextSpan(
@@ -698,13 +693,13 @@ class __HomePageContentState extends State<_HomePageContent> {
                                                                             .titleLarge
                                                                             ?.fontSize ??
                                                                         18) *
-                                                                    0.75, // Halbe Größe (0.5 * 1.5)
+                                                                    0.75,
                                                                 fontWeight:
                                                                     FontWeight
-                                                                        .normal, // Nicht fett
+                                                                        .normal,
                                                                 color: Theme.of(context)
                                                                     .colorScheme
-                                                                    .onSurfaceVariant, // Variante Farbe für Menge
+                                                                    .onSurfaceVariant,
                                                               ),
                                                             ),
                                                           ],
@@ -714,7 +709,7 @@ class __HomePageContentState extends State<_HomePageContent> {
                                                     Padding(
                                                       padding: EdgeInsets.only(
                                                         left: 20.0,
-                                                      ), // Abstand von links
+                                                      ),
                                                       child: Column(
                                                         crossAxisAlignment:
                                                             CrossAxisAlignment
@@ -739,68 +734,20 @@ class __HomePageContentState extends State<_HomePageContent> {
                                                   ],
                                                 ),
                                               ),
-                                              // --- NEU: Produktbild in der Mitte ---
-                                              if (_topProductImageUrl != null)
-                                                Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: AppSpacing.s,
-                                                  ), // Optional: Abstand
-                                                  child: ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8.0,
-                                                        ), // Optional: Ecken abrunden
-                                                    child: Image.network(
-                                                      _topProductImageUrl!,
-                                                      width:
-                                                          60, // Anpassen der Größe
-                                                      height: 60,
-                                                      fit: BoxFit
-                                                          .cover, // Oder BoxFit.contain, je nach Bedarf
-                                                      errorBuilder:
-                                                          (
-                                                            context,
-                                                            error,
-                                                            stackTrace,
-                                                          ) {
-                                                            // Falls das Laden des Bildes fehlschlägt, zeige ein Platzhalter-Icon
-                                                            return Icon(
-                                                              Icons
-                                                                  .image_not_supported,
-                                                              size: 40,
-                                                              color:
-                                                                  Colors.grey,
-                                                            );
-                                                          },
-                                                    ),
-                                                  ),
-                                                )
-                                              else
-                                                // Falls kein Bild vorhanden ist, zeige einen Platzhalter
-                                                Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: AppSpacing.s,
-                                                  ),
-                                                  child: Icon(
-                                                    Icons.image_not_supported,
-                                                    size: 40,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                              // --- ENDE NEU ---
+
                                               Expanded(
                                                 child: Column(
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.start,
                                                   children: [
-                                                    // --- NEU: DE: Fahne und Stadtname ---
                                                     Row(
                                                       mainAxisAlignment:
                                                           MainAxisAlignment
                                                               .start,
                                                       children: [
+                                                        SizedBox(width: 20),
                                                         Image.asset(
-                                                          'assets/logos/de-fahne.png', // Stelle sicher, dass diese Datei existiert
+                                                          'assets/logos/de-fahne.png',
                                                           width: 24,
                                                           height: 24,
                                                           errorBuilder:
@@ -818,25 +765,28 @@ class __HomePageContentState extends State<_HomePageContent> {
                                                         SizedBox(width: 8),
                                                         if (_topDeCity != null)
                                                           Text(
-                                                            _getDisplayString(_topDeCity),
+                                                            _getDisplayString(
+                                                              _topDeCity,
+                                                            ),
                                                             style: TextStyle(
-                                                              fontSize: 12,
+                                                              fontSize: 14,
                                                               color: Colors
                                                                   .grey[800],
                                                             ),
                                                           ),
                                                       ],
                                                     ),
-                                                    // --- ENDE NEU ---
+                                                    SizedBox(height: AppSpacing.xs),
                                                     Padding(
                                                       padding: EdgeInsets.only(
                                                         left: 20.0,
-                                                      ), // Abstand von links
+                                                      ),
                                                       child: RichText(
                                                         text: TextSpan(
-                                                          style: DefaultTextStyle.of(
-                                                            context,
-                                                          ).style, // Standardstil des Widgets
+                                                          style:
+                                                              DefaultTextStyle.of(
+                                                                context,
+                                                              ).style,
                                                           children: <TextSpan>[
                                                             TextSpan(
                                                               text:
@@ -848,13 +798,13 @@ class __HomePageContentState extends State<_HomePageContent> {
                                                                             .titleLarge
                                                                             ?.fontSize ??
                                                                         18) *
-                                                                    1.5, // 1.5-fache Größe
+                                                                    1.5,
                                                                 fontWeight:
                                                                     FontWeight
-                                                                        .bold, // Fett
-                                                                color: Theme.of(context)
-                                                                    .colorScheme
-                                                                    .onSurface, // Farbe an Theme anpassen
+                                                                        .bold,
+                                                                color: Theme.of(
+                                                                  context,
+                                                                ).colorScheme.onSurface,
                                                               ),
                                                             ),
                                                             TextSpan(
@@ -867,13 +817,13 @@ class __HomePageContentState extends State<_HomePageContent> {
                                                                             .titleLarge
                                                                             ?.fontSize ??
                                                                         18) *
-                                                                    0.75, // Halbe Größe (0.5 * 1.5)
+                                                                    0.75,
                                                                 fontWeight:
                                                                     FontWeight
-                                                                        .normal, // Nicht fett
+                                                                        .normal,
                                                                 color: Theme.of(context)
                                                                     .colorScheme
-                                                                    .onSurfaceVariant, // Variante Farbe für Menge
+                                                                    .onSurfaceVariant,
                                                               ),
                                                             ),
                                                           ],
@@ -883,7 +833,7 @@ class __HomePageContentState extends State<_HomePageContent> {
                                                     Padding(
                                                       padding: EdgeInsets.only(
                                                         left: 20.0,
-                                                      ), // Abstand von links
+                                                      ),
                                                       child: Column(
                                                         crossAxisAlignment:
                                                             CrossAxisAlignment
@@ -925,9 +875,7 @@ class __HomePageContentState extends State<_HomePageContent> {
                                 ],
                               ),
                             )
-                          : // Falls keine Daten vorhanden sind (und nicht geladen wird)
-                            Container(
-                              // Optional: Platzhalter, wenn keine Daten vorhanden sind
+                          : Container(
                               padding: EdgeInsets.all(AppSpacing.m),
                               child: Text(
                                 'Kein aktueller Hall of Shame-Eintrag verfügbar.',
@@ -972,8 +920,8 @@ class __HomePageContentState extends State<_HomePageContent> {
           ),
         ),
       ),
-      // --- ENDE NEU ---
-      floatingActionButton: currentUserId == 'LK0UJ40jzkcpuCcgxHqFR5I8OoW2'
+
+      floatingActionButton: currentUserId == AppConstants.adminUserId
           ? FloatingActionButton.extended(
               onPressed: () {
                 showDialog(
@@ -987,7 +935,7 @@ class __HomePageContentState extends State<_HomePageContent> {
                           leading: Icon(Icons.update),
                           title: Text('User-IDs aktualisieren'),
                           onTap: () {
-                            Navigator.pop(context); // Schließe den Dialog
+                            Navigator.pop(context);
                             updateUserIds(context);
                           },
                         ),
@@ -995,20 +943,16 @@ class __HomePageContentState extends State<_HomePageContent> {
                           leading: Icon(Icons.delete),
                           title: Text('Alte Einträge löschen'),
                           onTap: () {
-                            Navigator.pop(context); // Schließe den Dialog
+                            Navigator.pop(context);
                             deleteOldEntries(context);
                           },
                         ),
                         ListTile(
-                          leading: Icon(
-                            Icons.text_fields,
-                          ), // Oder ein anderes passendes Icon
+                          leading: Icon(Icons.text_fields),
                           title: Text('Strings normalisieren'),
                           onTap: () {
-                            Navigator.pop(context); // Schließe den Dialog
-                            _normalizeStrings(
-                              context,
-                            ); // <-- Ruf die neue Methode auf
+                            Navigator.pop(context);
+                            _normalizeStrings(context);
                           },
                         ),
                       ],
@@ -1021,7 +965,7 @@ class __HomePageContentState extends State<_HomePageContent> {
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
             )
-          : null, // Der Button wird nur für die spezifische UID angezeigt
+          : null,
     );
   }
 
@@ -1050,7 +994,6 @@ class __HomePageContentState extends State<_HomePageContent> {
     );
   }
 
-  // --- NEU: Hilfsfunktion für das Händler-Logo (dein bestehendes Widget) ---
   Widget _buildStoreLogoOrText(BuildContext context, String storeName) {
     String lowerCaseName = storeName.toLowerCase();
     if (lowerCaseName == 'aldisüd') {
@@ -1061,13 +1004,13 @@ class __HomePageContentState extends State<_HomePageContent> {
 
     return Image.asset(
       logoPath,
-      height: 32, // Geringere Höhe
-      width: 72, // Geringere Breite
+      height: 32,
+      width: 72,
       errorBuilder: (context, error, stackTrace) {
         return Image.asset(
           logoPathUpper,
-          height: 32, // Geringere Höhe
-          width: 72, // Geringere Breite
+          height: 32,
+          width: 72,
           errorBuilder: (context, error, stackTrace) {
             return Text(
               storeName,
@@ -1081,7 +1024,6 @@ class __HomePageContentState extends State<_HomePageContent> {
     );
   }
 
-  // --- NEU: Hilfsfunktion für Preis pro Einheit ---
   Widget _buildPricePerUnitInfo(double price, String quantity) {
     final pricePerUnit = calculatePricePerUnit(price, quantity);
     final displayUnit = getDisplayUnit(quantity) ?? 'Stück';
@@ -1089,13 +1031,9 @@ class __HomePageContentState extends State<_HomePageContent> {
     if (pricePerUnit != null) {
       return Text(
         '€${pricePerUnit.toStringAsFixed(3)} / $displayUnit',
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.blue, // Oder eine andere Farbe für den Einheitspreis
-        ),
+        style: TextStyle(fontSize: 12, color: Colors.blue),
       );
     } else {
-      // Falls calculatePricePerUnit null zurückgibt, zeige zumindest die Menge an
       return Text(
         'Menge: $quantity',
         style: TextStyle(fontSize: 12, color: Colors.grey),

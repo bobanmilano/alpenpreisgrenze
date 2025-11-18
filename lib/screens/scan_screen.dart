@@ -1,11 +1,12 @@
-// lib/screens/scan_screen.dart
 import 'package:community_material_icon/community_material_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:my_price_tracker_app/screens/barcode_scanner_page.dart';
+import 'package:my_price_tracker_app/services/firebase_service.dart';
+import 'package:my_price_tracker_app/utils/app_constants.dart';
 import '../models/product.dart';
-import 'comparison_screen.dart'; // Import für die nächste Seite
+import 'comparison_screen.dart';
 import '../services/openfoodfacts_service.dart';
-import 'package:my_price_tracker_app/theme/app_theme_config.dart'; // Importieren Sie das Theme
+import 'package:my_price_tracker_app/theme/app_theme_config.dart';
 
 class ScanScreen extends StatefulWidget {
   @override
@@ -14,8 +15,31 @@ class ScanScreen extends StatefulWidget {
 
 class _ScanScreenState extends State<ScanScreen> {
   bool _isLoading = false;
+  final TextEditingController _barcodeController = TextEditingController();
+  static const String _adminUserId = AppConstants.adminUserId;
+  final FirebaseService _firebaseService = FirebaseService();
 
-  // Methode zur Verarbeitung des gescannten Barcodes
+  String? _currentUserId = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserId();
+  }
+
+  Future<void> _loadUserId() async {
+    try {
+      final userId = _firebaseService.getCurrentUserId();
+      if (mounted) {
+        setState(() {
+          _currentUserId = userId;
+        });
+      }
+    } catch (e) {
+      print('Fehler beim Laden der User-ID: $e');
+    }
+  }
+
   void _handleBarcodeScan(String scannedBarcode) async {
     setState(() {
       _isLoading = true;
@@ -26,7 +50,6 @@ class _ScanScreenState extends State<ScanScreen> {
         throw Exception('Kein gültiger Barcode erkannt.');
       }
 
-      // Hole Produktinformationen vom OpenFoodFacts-Dienst
       final product = await OpenFoodFactsService.fetchProduct(scannedBarcode);
 
       if (mounted) {
@@ -34,20 +57,20 @@ class _ScanScreenState extends State<ScanScreen> {
           _isLoading = false;
         });
 
-        // Überprüfe, ob ein Produkt gefunden wurde
         if (product.barcode != null) {
-          // Produkt gefunden -> Navigiere zum Vergleich
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ComparisonScreen(product: product, fromScan: true),
+              builder: (context) =>
+                  ComparisonScreen(product: product, fromScan: true),
             ),
           );
         } else {
-          // Produkt nicht gefunden -> Zeige Snackbar
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Produkt mit Barcode $scannedBarcode nicht in der OpenFoodFacts-Datenbank gefunden.'),
+              content: Text(
+                'Produkt mit Barcode $scannedBarcode nicht in der OpenFoodFacts-Datenbank gefunden.',
+              ),
               duration: const Duration(seconds: 4),
             ),
           );
@@ -71,7 +94,6 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Verwende das Custom-Styling
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
@@ -90,7 +112,6 @@ class _ScanScreenState extends State<ScanScreen> {
       ),
       body: Stack(
         children: [
-          // Hintergrundfarbe oder Bild (optional)
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -104,23 +125,22 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
           ),
 
-          // Mittig positionierter, großer, runder Button
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
                   onTap: () async {
-                    if (_isLoading) return; // Verhindere Klicks während des Ladens
+                    if (_isLoading) return;
 
-                    // Navigiere zur BarcodeScannerPage und warte auf den gescannten Barcode
                     final scannedBarcode = await Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => BarcodeScannerPage()),
+                      MaterialPageRoute(
+                        builder: (context) => BarcodeScannerPage(),
+                      ),
                     );
 
                     if (scannedBarcode != null) {
-                      // Verarbeite den gescannten Barcode
                       _handleBarcodeScan(scannedBarcode);
                     }
                   },
@@ -140,7 +160,9 @@ class _ScanScreenState extends State<ScanScreen> {
                     ),
                     child: _isLoading
                         ? CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onPrimary),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.onPrimary,
+                            ),
                           )
                         : Icon(
                             CommunityMaterialIcons.barcode_scan,
@@ -157,6 +179,36 @@ class _ScanScreenState extends State<ScanScreen> {
                     color: theme.colorScheme.onBackground,
                   ),
                 ),
+
+                if (_currentUserId == _adminUserId) ...[
+                  const SizedBox(height: 30),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: TextField(
+                      controller: _barcodeController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Barcode manuell eingeben',
+                        border: OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.send),
+                          onPressed: () {
+                            final barcode = _barcodeController.text.trim();
+                            if (barcode.isNotEmpty) {
+                              _handleBarcodeScan(barcode);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Bitte einen Barcode eingeben'),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

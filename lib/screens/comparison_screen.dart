@@ -1,7 +1,7 @@
-// lib/screens/comparison_screen.dart
 import 'package:flutter/material.dart';
 import 'package:my_price_tracker_app/screens/add_price_screen.dart';
 import 'package:my_price_tracker_app/theme/app_theme.dart';
+import 'package:my_price_tracker_app/utils/app_constants.dart';
 import 'package:my_price_tracker_app/utils/string_utils.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
@@ -17,13 +17,12 @@ import '../utils/price_utils.dart';
 import '../widgets/info_message.dart';
 import '../widgets/price_card.dart';
 import 'package:flutter_image_gallery_saver/flutter_image_gallery_saver.dart';
-// Importiere das Theme, falls AppSpacing verwendet wird
+
 import 'package:my_price_tracker_app/theme/app_theme_config.dart';
 
 class ComparisonScreen extends StatefulWidget {
   final Product product;
-  final bool
-  fromScan; // Parameter, um zu kennzeichnen, ob der Screen über einen Scan aufgerufen wurde
+  final bool fromScan;
 
   const ComparisonScreen({
     Key? key,
@@ -38,12 +37,12 @@ class ComparisonScreen extends StatefulWidget {
 class _ComparisonScreenState extends State<ComparisonScreen> {
   final FirebaseService _firebaseService = FirebaseService();
   late ScreenshotController _screenshotController;
-  late String _userId; // Dynamische Benutzer-ID
+  late String _userId;
   final ValueNotifier<PriceEntry?> _currentATPrice = ValueNotifier(null);
   final ValueNotifier<PriceEntry?> _currentDEPrice = ValueNotifier(null);
-  bool _isFabExpanded = false; // Zustand für den aufklappbaren FAB
-  bool _dialogShown = false; // Verhindert, dass der Dialog mehrfach erscheint
-
+  bool _isFabExpanded = false;
+  bool _dialogShown = false;
+  bool _initialCheckDone = false;
   @override
   void initState() {
     super.initState();
@@ -54,8 +53,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   Future<void> _loadUserId() async {
     try {
       setState(() {
-        _userId = _firebaseService
-            .getCurrentUserId(); // Verwende die neue Methode
+        _userId = _firebaseService.getCurrentUserId();
       });
     } catch (e) {
       print('Fehler beim Abrufen der Benutzer-ID: $e');
@@ -74,7 +72,6 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   }
 
   void _showPriceExistsDialog(PriceEntry atPrice, PriceEntry dePrice) {
-    // Setze den Zustand, dass der Dialog gezeigt wurde, um Doppelaufrufe zu verhindern
     if (!_dialogShown) {
       setState(() {
         _dialogShown = true;
@@ -82,10 +79,9 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
       final atPriceValue = atPrice.price;
       final dePriceValue = dePrice.price;
-      // --- NEU: Verwende die display-Getter ---
-      final atStore = atPrice.displayStore; // <--- Statt atPrice.store
-      final deStore = dePrice.displayStore; // <--- Statt dePrice.store
-      // --- ENDE NEU ---
+
+      final atStore = atPrice.displayStore;
+      final deStore = dePrice.displayStore;
 
       showDialog(
         context: context,
@@ -93,22 +89,22 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           title: Text('Neuen Preis hinzufügen?'),
           content: Text(
             'Für dieses Produkt existieren bereits aktuelle Preise:\n\n'
-            'Höchster Preis in Österreich: €${atPriceValue.toStringAsFixed(2)} (${atStore})\n' // <--- atStore
-            'Niedrigster Preis in Deutschland: €${dePriceValue.toStringAsFixed(2)} (${deStore})\n\n' // <--- deStore
+            'Höchster Preis in Österreich: €${atPriceValue.toStringAsFixed(2)} (${atStore})\n'
+            'Niedrigster Preis in Deutschland: €${dePriceValue.toStringAsFixed(2)} (${deStore})\n\n'
             'Bitte füge nur einen neuen Preis hinzu, wenn du den aktuellen Österreich-Aufschlag übertreffen möchtest, '
             'also die Preisdifferenz zum deutschen Preis noch größer ist.',
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Dialog schließen
+                Navigator.of(context).pop();
               },
               child: Text('ABBRECHEN'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Dialog schließen
-                _showAddPriceDialog(context); // AddPriceScreen öffnen
+                Navigator.of(context).pop();
+                _showAddPriceDialog(context);
               },
               child: Text('PREIS HINZUFÜGEN'),
             ),
@@ -172,35 +168,25 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
     PriceEntry dePrice,
   ) async {
     try {
-      // --- NEU: Verwende den displayStore für die E-Mail-Adresse ---
-      // Prüfen, ob der österreichische Shop bekannt ist (verwende displayStore)
       if (atPrice.displayStore.isEmpty) {
-        // <--- Prüfe displayStore statt store
         throw Exception('Der österreichische Shop ist unbekannt.');
       }
 
-      // Laden der Support-E-Mail-Adresse für den Shop (verwende displayStore)
       final emailMap = await _firebaseService.getSupportEmails().first;
       print(emailMap);
-      // Hier musst du wahrscheinlich die Keys in deiner 'supportemails'-Collection auch in Kleinbuchstaben haben
-      // und die Suche erfolgt über den Rohdatenwert 'store'. Falls du die Keys in Kleinbuchstaben hast,
-      // kannst du hier weiterhin 'atPrice.store' verwenden, um die E-Mail-Adresse zu finden.
-      // Die Anzeige im 'Salutation' der E-Mail soll aber schön sein.
-      final supportEmail =
-          emailMap[atPrice.displayStore];
+
+      final supportEmail = emailMap[atPrice.displayStore];
       if (supportEmail == null) {
         throw Exception(
           'Keine E-Mail-Adresse für ${atPrice.displayStore} gefunden.',
-        ); // <--- Zeige displayStore an
+        );
       }
 
-      // Laden der E-Mail-Vorlage
       final emailTemplate = await _firebaseService.getEmailTemplate();
       if (emailTemplate == null) {
         throw Exception('E-Mail-Vorlage konnte nicht geladen werden.');
       }
 
-      // Berechnen des Preisunterschieds
       final atProductWeight = atPrice.quantity ?? 'N/A';
       final deProductWeight = dePrice.quantity ?? 'N/A';
 
@@ -223,11 +209,9 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           ? '${percentageDiff.abs().toStringAsFixed(2)} % höher (pro $displayUnit)'
           : '${percentageDiff.abs().toStringAsFixed(2)} % höher';
 
-      // Aufbau der E-Mail
       final emailBody = _buildEmailBody(
         emailTemplate,
-        atPrice
-            .displayStore, // <--- Verwende displayStore für die Anzeige in der E-Mail
+        atPrice.displayStore,
         atPrice.price,
         dePrice.price,
         atProductWeight,
@@ -235,11 +219,9 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
         percentageDiffText,
       );
 
-      // Erstellen der E-Mail-URL
       final emailUrl =
           'mailto:$supportEmail?subject=${Uri.encodeComponent('Preisunterschied bei ${widget.product.productName}')}&body=${Uri.encodeComponent(emailBody)}';
 
-      // Öffnen der E-Mail-App
       if (await canLaunch(emailUrl)) {
         await launch(emailUrl);
       } else {
@@ -254,27 +236,20 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
   String _buildEmailBody(
     Map<String, String>? emailTemplate,
-    String
-    store, // <--- Dieser Parameter ist jetzt bereits der 'schöne' Name, z.B. aus _sendComplaintEmail
+    String store,
     double atPriceValue,
     double dePriceValue,
     String atProductWeight,
     String deProductWeight,
     String percentageDiffText,
   ) {
-    // Formatieren der Preise
     final atPriceText = '€${atPriceValue.toStringAsFixed(2)}';
     final dePriceText = '€${dePriceValue.toStringAsFixed(2)}';
 
-    // Prüfen, ob Shrinkflation vorliegt
     bool isShrinkflationDetected = false;
     if (atProductWeight.isNotEmpty && deProductWeight.isNotEmpty) {
-      final atQuantityNum = parseQuantity(
-        atProductWeight,
-      ); // Hilfsfunktion zur Umwandlung in Zahl
-      final deQuantityNum = parseQuantity(
-        deProductWeight,
-      ); // Hilfsfunktion zur Umwandlung in Zahl
+      final atQuantityNum = parseQuantity(atProductWeight);
+      final deQuantityNum = parseQuantity(deProductWeight);
 
       if (atQuantityNum != null &&
           deQuantityNum != null &&
@@ -283,29 +258,20 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       }
     }
 
-    // Aufbau der E-Mail
     return [
-          emailTemplate?['salutation']?.replaceAll(
-            '\$store',
-            store,
-          ), // <--- 'store' ist jetzt bereits der 'schöne' Name
-          emailTemplate?['bodyprice']
-              ?.replaceAll(
-                '\$productName',
-                widget.product.productName ?? '',
-              ) // <--- Hier kannst du auch den display-Namen des Produkts verwenden, wenn du ihn hast
-              ?.replaceAll('\$atPriceText', atPriceText)
-              ?.replaceAll('\$dePriceText', dePriceText)
-              ?.replaceAll('\$percentageDiffText', percentageDiffText),
-          if (isShrinkflationDetected) // Nur hinzufügen, wenn Shrinkflation erkannt wurde
-            emailTemplate?['bodyshrinkflation']
-                ?.replaceAll('\$atProductWeight', atProductWeight)
-                ?.replaceAll('\$deProductWeight', deProductWeight),
-          emailTemplate?['bodycomplaint'],
-          emailTemplate?['greeting'],
-        ]
-        .where((part) => part != null) // Entferne null-Werte
-        .join('\n\n'); // Füge die Teile mit Zeilenumbrüchen zusammen
+      emailTemplate?['salutation']?.replaceAll('\$store', store),
+      emailTemplate?['bodyprice']
+          ?.replaceAll('\$productName', widget.product.productName ?? '')
+          ?.replaceAll('\$atPriceText', atPriceText)
+          ?.replaceAll('\$dePriceText', dePriceText)
+          ?.replaceAll('\$percentageDiffText', percentageDiffText),
+      if (isShrinkflationDetected)
+        emailTemplate?['bodyshrinkflation']
+            ?.replaceAll('\$atProductWeight', atProductWeight)
+            ?.replaceAll('\$deProductWeight', deProductWeight),
+      emailTemplate?['bodycomplaint'],
+      emailTemplate?['greeting'],
+    ].where((part) => part != null).join('\n\n');
   }
 
   Future<void> _captureAndShareScreenshot(
@@ -313,13 +279,11 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
     PriceEntry dePrice,
   ) async {
     try {
-      // Erstellen des Screenshots
       final imageBytes = await _screenshotController.capture();
       if (imageBytes == null) {
         throw Exception('Screenshot konnte nicht erstellt werden.');
       }
 
-      // Speichern des Screenshots in einem temporären Verzeichnis
       final tempDir = await getTemporaryDirectory();
       final fileName =
           'alpenpreisgrenze_${DateTime.now().millisecondsSinceEpoch}.png';
@@ -327,14 +291,12 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       final imageFile = await File(filePath).create();
       await imageFile.writeAsBytes(imageBytes);
 
-      // Erstellen der Teilen-Nachricht
       final shareText =
           'Österreich-Aufschlag für "${widget.product.productName}" bei ${atPrice.displayStore}:\n'
           'Österreich: €${atPrice.price.toStringAsFixed(2)} (${atPrice.quantity})\n'
           'Deutschland: €${dePrice.price.toStringAsFixed(2)} (${dePrice.quantity})\n'
           '#ÖsterreichAufschlag #Preisvergleich';
 
-      // Teilen des Screenshots mit der Nachricht
       await Share.shareXFiles([XFile(filePath)], text: shareText);
     } catch (e) {
       ScaffoldMessenger.of(
@@ -436,7 +398,6 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Berechne die maximale Höhe für die erste Karte
     final maxHeight = MediaQuery.of(context).size.height / 3;
     final theme = Theme.of(context);
     return Scaffold(
@@ -449,17 +410,13 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       ),
       body: SingleChildScrollView(
         child: Container(
-          // <-- Dieses Container-Widget ...
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              // <-- ... hat diesen Verlauf als Dekoration
-              begin: Alignment.topCenter, // Startpunkt: Oben
-              end: Alignment.bottomCenter, // Endpunkt: Unten
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
               colors: [
-                theme.colorScheme.primaryContainer.withOpacity(
-                  0.2,
-                ), // Lila (leicht transparent)
-                theme.colorScheme.background, // Weiß (oder Hintergrundfarbe)
+                theme.colorScheme.primaryContainer.withOpacity(0.2),
+                theme.colorScheme.background,
               ],
             ),
           ),
@@ -468,24 +425,19 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Produktinformationen - Höhe begrenzt
                 ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: maxHeight),
                   child: Card(
-                    // Reduzierter äußerer Rand
-                    margin: EdgeInsets.all(AppSpacing.s), // z.B. 4.0
+                    margin: EdgeInsets.all(AppSpacing.s),
                     child: Padding(
-                      // Reduziertes Padding innerhalb der Karte
-                      padding: EdgeInsets.all(AppSpacing.s), // z.B. 8.0
+                      padding: EdgeInsets.all(AppSpacing.s),
                       child: Column(
                         children: [
                           if (widget.product.imageUrl != null)
                             Expanded(
-                              // Bild nimmt verfügbaren Platz innerhalb der Höhe ein
                               child: Image.network(
                                 widget.product.imageUrl!,
-                                fit: BoxFit
-                                    .contain, // Bild passt sich an den Container an
+                                fit: BoxFit.contain,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Icon(
                                     Icons.image_not_supported,
@@ -494,11 +446,10 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                                 },
                               ),
                             ),
-                          if (widget.product.imageUrl ==
-                              null) // Falls kein Bild, Icon anzeigen
+                          if (widget.product.imageUrl == null)
                             Icon(Icons.image_not_supported, size: 100),
-                          // Reduzierter Abstand zum Text
-                          SizedBox(height: AppSpacing.s), // z.B. 4.0
+
+                          SizedBox(height: AppSpacing.s),
                           Text(
                             widget.product.productName ?? 'Kein Name',
                             style: Theme.of(context).textTheme.headlineSmall,
@@ -512,7 +463,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                             'Menge: ${widget.product.quantity ?? 'N/A'}',
                             textAlign: TextAlign.center,
                           ),
-                              Text(
+                          Text(
                             'Barcode: ${widget.product.barcode ?? 'N/A'}',
                             textAlign: TextAlign.center,
                           ),
@@ -521,8 +472,8 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                     ),
                   ),
                 ),
-                // Reduzierter Abstand zur nächsten Komponente
-                SizedBox(height: AppSpacing.s), // z.B. 4.0
+
+                SizedBox(height: AppSpacing.s),
                 StreamBuilder<List<PriceEntry>>(
                   stream: _firebaseService.getAllPriceEntriesForBarcode(
                     widget.product.barcode!,
@@ -539,56 +490,52 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                     final now = DateTime.now();
                     final oneMonthAgo = now.subtract(Duration(days: 365));
 
-                    // Filtere nur aktuelle Preise
                     final filteredPrices = allPrices
                         .where((price) => price.timestamp.isAfter(oneMonthAgo))
                         .toList();
 
-                    // Sortiere AT-Preise nach Preis absteigend (höchster Preis zuerst)
                     final atPrices =
                         filteredPrices
                             .where((price) => price.country == 'Österreich')
                             .toList()
                           ..sort((a, b) => b.price.compareTo(a.price));
 
-                    // Sortiere DE-Preise nach Preis aufsteigend (niedrigster Preis zuerst)
                     final dePrices =
                         filteredPrices
                             .where((price) => price.country == 'Deutschland')
                             .toList()
                           ..sort((a, b) => a.price.compareTo(b.price));
 
-                    // Initialisiere _currentATPrice und _currentDEPrice
-                    // Prüfe hier, *nachdem* die Listen sortiert sind, ob beide existieren
-                    if (_currentATPrice.value == null && atPrices.isNotEmpty) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!_initialCheckDone && widget.fromScan) {
+                      _initialCheckDone = true;
+
+                      if (atPrices.isNotEmpty && dePrices.isNotEmpty) {
                         _currentATPrice.value = atPrices.first;
-                        // Nachdem AT-Preis gesetzt wurde, prüfe auf beide und zeige ggf. Dialog
-                        if (widget.fromScan &&
-                            _currentATPrice.value != null &&
-                            _currentDEPrice.value != null &&
-                            !_dialogShown) {
-                          _showPriceExistsDialog(
-                            _currentATPrice.value!,
-                            _currentDEPrice.value!,
-                          );
-                        }
-                      });
-                    }
-                    if (_currentDEPrice.value == null && dePrices.isNotEmpty) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
                         _currentDEPrice.value = dePrices.first;
-                        // Nachdem DE-Preis gesetzt wurde, prüfe auf beide und zeige ggf. Dialog
-                        if (widget.fromScan &&
-                            _currentATPrice.value != null &&
-                            _currentDEPrice.value != null &&
-                            !_dialogShown) {
-                          _showPriceExistsDialog(
-                            _currentATPrice.value!,
-                            _currentDEPrice.value!,
-                          );
-                        }
-                      });
+
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (!_dialogShown) {
+                            _showPriceExistsDialog(
+                              atPrices.first,
+                              dePrices.first,
+                            );
+                          }
+                        });
+                      } else {
+                        if (atPrices.isNotEmpty)
+                          _currentATPrice.value = atPrices.first;
+                        if (dePrices.isNotEmpty)
+                          _currentDEPrice.value = dePrices.first;
+                      }
+                    } else {
+                      if (atPrices.isNotEmpty &&
+                          _currentATPrice.value == null) {
+                        _currentATPrice.value = atPrices.first;
+                      }
+                      if (dePrices.isNotEmpty &&
+                          _currentDEPrice.value == null) {
+                        _currentDEPrice.value = dePrices.first;
+                      }
                     }
 
                     return Column(
@@ -609,8 +556,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                             );
                           },
                         ),
-                        // Reduzierter Abstand zu den PriceCards
-                        SizedBox(height: AppSpacing.s), // z.B. 4.0
+                        SizedBox(height: AppSpacing.s),
                         Row(
                           children: [
                             Expanded(
@@ -691,7 +637,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
             return;
           }
 
-          _onSharePressed(); // Direkt die aktuellen Preise verwenden
+          _onSharePressed();
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

@@ -1,6 +1,5 @@
-// lib/screens/about_screen.dart
 import 'package:flutter/material.dart';
-import 'package:my_price_tracker_app/theme/app_theme.dart'; // ✅ NEU HINZUGEFÜGT
+import 'package:my_price_tracker_app/theme/app_theme.dart';
 import 'package:community_material_icon/community_material_icon.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -12,21 +11,20 @@ class AboutScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Über uns'),
         centerTitle: true,
-        backgroundColor: AppColors.primary, // ✅ THEME FARBE
-        foregroundColor: Colors.white, // ✅ THEME FARBE
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(AppSpacing.m), // ✅ THEME ABSTAND
+        padding: EdgeInsets.all(AppSpacing.m),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero-Bild oder Icon (optional)
             Center(
               child: Container(
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1), // ✅ THEME FARBE
+                  color: AppColors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(50),
                 ),
                 child: ClipRRect(
@@ -40,30 +38,30 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
-            // Hauptüberschrift
+            SizedBox(height: AppSpacing.xxl),
+
             Text(
               'Die Mission von AlpenPreisGrenze',
               style: TextStyle(
-                fontSize: AppTypography.headline3, // ✅ THEME TYPOGRAFIE
+                fontSize: AppTypography.headline3,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primary, // ✅ THEME FARBE
+                color: AppColors.primary,
               ),
             ),
-            SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
-            // Beschreibungstext
+            SizedBox(height: AppSpacing.m),
+
             Text(
               'Willkommen bei AlpenPreisGrenze! Ihrer Stop Österreich-Aufschlag App! Wir glauben daran, '
               'dass jeder Käufer das Recht auf einen fairen und transparenten '
               'Einzelhandel hat. Unser Ziel ist es, im kollektiven gemeinschaftichen Handeln '
               'Druck auf den Einzelhandel auszuüben bis dieser seine unfairen Praktiken uns Österreichern gegenüber einstellt.',
               style: TextStyle(
-                fontSize: AppTypography.bodyLarge, // ✅ THEME TYPOGRAFIE
-                color: AppColors.textPrimary, // ✅ THEME FARBE
+                fontSize: AppTypography.bodyLarge,
+                color: AppColors.textPrimary,
               ),
             ),
-            SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
-            // Hauptpunkte als Karten
+            SizedBox(height: AppSpacing.xxl),
+
             _buildInfoCard(
               context,
               icon: CommunityMaterialIcons.barcode,
@@ -74,17 +72,15 @@ class AboutScreen extends StatelessWidget {
                   'und die App zeigt sofort die Höhe des Österreich-Aufschlages an.',
             ),
 
-            SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.m),
 
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  AppRadius.large,
-                ), // ✅ THEME RADIUS
+                borderRadius: BorderRadius.circular(AppRadius.large),
               ),
               child: Padding(
-                padding: EdgeInsets.all(AppSpacing.m), // ✅ THEME ABSTAND
+                padding: EdgeInsets.all(AppSpacing.m),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -94,49 +90,43 @@ class AboutScreen extends StatelessWidget {
                           width: 32,
                           height: 32,
                           child: Stack(
-                            alignment: Alignment
-                                .center, // Zentriert das innere Icon im äußeren
+                            alignment: Alignment.center,
                             children: [
                               Icon(
-                                Icons.border_outer, // Äußeres Icon (großes Quadrat)
+                                Icons.border_outer,
                                 size: 32,
                                 color: AppColors.primary,
                               ),
-                  Icon(
-                                  Icons
-                                      .arrow_downward, // Inneres Icon (Pfeil nach unten)
-                                  size:
-                                      32 *
-                                      0.6, // Passe die Größe des inneren Icons an (z.B. 60% der äußeren Größe)
-                                  color: AppColors.primary,
-                                ),
-                           
+                              Icon(
+                                Icons.arrow_downward,
+                                size: 32 * 0.6,
+                                color: AppColors.primary,
+                              ),
                             ],
                           ),
                         ),
-                        SizedBox(width: AppSpacing.s), // ✅ THEME ABSTAND
+                        SizedBox(width: AppSpacing.s),
                         Expanded(
                           child: Text(
                             'Shrinkflation entdecken',
                             style: TextStyle(
-                              fontSize:
-                                  AppTypography.body, // ✅ THEME TYPOGRAFIE
+                              fontSize: AppTypography.body,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary, // ✅ THEME FARBE
+                              color: AppColors.textPrimary,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: AppSpacing.s), // ✅ THEME ABSTAND
+                    SizedBox(height: AppSpacing.s),
                     Text(
                       'Manchmal sind die Preise nicht '
                       'signifikant unterschiedlich. Allerdings wird still und heimlich die Menge '
                       'reduziert (Shrinkflation). Unsere App erkennt solche Praktiken und macht Sie darauf aufmerksam.',
 
                       style: TextStyle(
-                        fontSize: AppTypography.body, // ✅ THEME TYPOGRAFIE
-                        color: AppColors.textPrimary, // ✅ THEME FARBE
+                        fontSize: AppTypography.body,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -144,8 +134,7 @@ class AboutScreen extends StatelessWidget {
               ),
             ),
 
-
-            SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.m),
 
             _buildInfoCard(
               context,
@@ -157,7 +146,7 @@ class AboutScreen extends StatelessWidget {
                   '1,5L sondern nur in 1,25L. Damit ist der Preisunterschied nicht so dramatisch auch wenn er auf den Literpreis umgerechnet über 100% beträgt. Unsere App erkennt auch solche Praktiken und macht Sie darauf aufmerksam.',
             ),
 
-            SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.m),
 
             _buildInfoCard(
               context,
@@ -169,7 +158,7 @@ class AboutScreen extends StatelessWidget {
                   'umso mehr Druck können wir gemeinsam auf den Einzelhandel ausüben.',
             ),
 
-            SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.m),
 
             _buildInfoCard(
               context,
@@ -181,17 +170,17 @@ class AboutScreen extends StatelessWidget {
                   'enthalten die Preisvergleichsdaten und eine Aufforderung zu erklären wie die Differenz gerechtfertigt wird.',
             ),
 
-            SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
-            // Zusätzliche Punkte
+            SizedBox(height: AppSpacing.xxl),
+
             Text(
               'Weitere Vorteile',
               style: TextStyle(
-                fontSize: AppTypography.headline3, // ✅ THEME TYPOGRAFIE
+                fontSize: AppTypography.headline3,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary, // ✅ THEME FARBE
+                color: AppColors.textPrimary,
               ),
             ),
-            SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.m),
 
             _buildFeatureItem(
               context,
@@ -223,40 +212,34 @@ class AboutScreen extends StatelessWidget {
               'Ihre Daten gehören Ihnen - wir respektieren Ihre Privatsphäre',
             ),
 
-            SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
-            // Abschluss-Text
+            SizedBox(height: AppSpacing.xxl),
+
             Container(
-              padding: EdgeInsets.all(AppSpacing.m), // ✅ THEME ABSTAND
+              padding: EdgeInsets.all(AppSpacing.m),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1), // ✅ THEME FARBE
-                borderRadius: BorderRadius.circular(
-                  AppRadius.large,
-                ), // ✅ THEME RADIUS
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppRadius.large),
               ),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.handshake,
-                    size: 40,
-                    color: AppColors.primary, // ✅ THEME FARBE
-                  ),
-                  SizedBox(height: AppSpacing.s), // ✅ THEME ABSTAND
+                  Icon(Icons.handshake, size: 40, color: AppColors.primary),
+                  SizedBox(height: AppSpacing.s),
                   Text(
                     'Gemeinsam für fairen Einzelhandel!',
                     style: TextStyle(
-                      fontSize: AppTypography.headline3, // ✅ THEME TYPOGRAFIE
+                      fontSize: AppTypography.headline3,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primary, // ✅ THEME FARBE
+                      color: AppColors.primary,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: AppSpacing.s), // ✅ THEME ABSTAND
+                  SizedBox(height: AppSpacing.s),
                   Text(
                     'Treten Sie unserer Community bei und tragen Sie dazu bei, '
                     'den unfairen Österreich-Aufschlag zu beenden.',
                     style: TextStyle(
-                      fontSize: AppTypography.body, // ✅ THEME TYPOGRAFIE
-                      color: AppColors.textPrimary, // ✅ THEME FARBE
+                      fontSize: AppTypography.body,
+                      color: AppColors.textPrimary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -264,27 +247,27 @@ class AboutScreen extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
-            // Kontakt-Info (optional)
+            SizedBox(height: AppSpacing.xxl),
+
             Text(
               'Haben Sie Fragen oder Feedback?',
               style: TextStyle(
-                fontSize: AppTypography.headline3, // ✅ THEME TYPOGRAFIE
+                fontSize: AppTypography.headline3,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary, // ✅ THEME FARBE
+                color: AppColors.textPrimary,
               ),
             ),
-            SizedBox(height: AppSpacing.s), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.s),
             Text(
               'Wir freuen uns über Ihre Rückmeldung! Kontaktieren Sie uns über '
               'die Einstellungen oder schreiben Sie uns direkt eine E-Mail-Nachricht.',
               style: TextStyle(
-                fontSize: AppTypography.body, // ✅ THEME TYPOGRAFIE
-                color: AppColors.textPrimary, // ✅ THEME FARBE
+                fontSize: AppTypography.body,
+                color: AppColors.textPrimary,
               ),
             ),
 
-            SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.xxl),
           ],
         ),
       ),
@@ -300,39 +283,35 @@ class AboutScreen extends StatelessWidget {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.large), // ✅ THEME RADIUS
+        borderRadius: BorderRadius.circular(AppRadius.large),
       ),
       child: Padding(
-        padding: EdgeInsets.all(AppSpacing.m), // ✅ THEME ABSTAND
+        padding: EdgeInsets.all(AppSpacing.m),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  icon,
-                  size: 32,
-                  color: AppColors.primary, // ✅ THEME FARBE
-                ),
-                SizedBox(width: AppSpacing.s), // ✅ THEME ABSTAND
+                Icon(icon, size: 32, color: AppColors.primary),
+                SizedBox(width: AppSpacing.s),
                 Expanded(
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: AppTypography.body, // ✅ THEME TYPOGRAFIE
+                      fontSize: AppTypography.body,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary, // ✅ THEME FARBE
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: AppSpacing.s), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.s),
             Text(
               content,
               style: TextStyle(
-                fontSize: AppTypography.body, // ✅ THEME TYPOGRAFIE
-                color: AppColors.textPrimary, // ✅ THEME FARBE
+                fontSize: AppTypography.body,
+                color: AppColors.textPrimary,
               ),
             ),
           ],
@@ -347,16 +326,12 @@ class AboutScreen extends StatelessWidget {
     String subtitle,
   ) {
     return Padding(
-      padding: EdgeInsets.only(bottom: AppSpacing.s), // ✅ THEME ABSTAND
+      padding: EdgeInsets.only(bottom: AppSpacing.s),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.check_circle,
-            color: AppColors.primary, // ✅ THEME FARBE
-            size: 20,
-          ),
-          SizedBox(width: AppSpacing.s), // ✅ THEME ABSTAND
+          Icon(Icons.check_circle, color: AppColors.primary, size: 20),
+          SizedBox(width: AppSpacing.s),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,16 +339,16 @@ class AboutScreen extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: AppTypography.body, // ✅ THEME TYPOGRAFIE
+                    fontSize: AppTypography.body,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary, // ✅ THEME FARBE
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    fontSize: AppTypography.bodySmall, // ✅ THEME TYPOGRAFIE
-                    color: AppColors.textSecondary, // ✅ THEME FARBE
+                    fontSize: AppTypography.bodySmall,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],

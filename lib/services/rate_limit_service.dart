@@ -1,11 +1,9 @@
-// lib/services/rate_limit_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RateLimitService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Erweiterte Rate-Limiting-Funktion MIT Composite-Index
   static Future<Map<String, bool>> checkUserLimits(
     String userId, {
     String? actionType,
@@ -14,12 +12,8 @@ class RateLimitService {
       final now = DateTime.now();
       final oneDayAgo = now.subtract(Duration(days: 1));
       final oneWeekAgo = now.subtract(Duration(days: 7));
-      final limits = {
-        'canCreatePrice': true,
-        'canChangeProfileImage': true,
-      };
+      final limits = {'canCreatePrice': true, 'canChangeProfileImage': true};
 
-      // Preiserstellung max 200 pro Tag
       if (actionType == 'create_price' || actionType == null) {
         try {
           final apartmentSnapshot = await _firestore
@@ -39,7 +33,6 @@ class RateLimitService {
         }
       }
 
-      // Profilbild-Änderung limitieren (max 1 pro Woche)
       if (actionType == 'change_profile_image' || actionType == null) {
         try {
           final userDoc = await _firestore
@@ -68,16 +61,11 @@ class RateLimitService {
       return limits;
     } catch (e) {
       print('Allgemeiner Fehler in checkUserLimits: $e');
-      // Im Zweifel erlauben
-      return {
-        'canSubmitPrice': true,
-        'canChangeProfileImage': true,
-      };
+
+      return {'canSubmitPrice': true, 'canChangeProfileImage': true};
     }
   }
 
- 
-  // Hilfsfunktion zum Extrahieren von DateTime aus verschiedenen Firestore-Typen
   static DateTime? _getDateTimeFromFirestore(dynamic dateField) {
     if (dateField == null) return null;
 
@@ -106,15 +94,9 @@ class RateLimitService {
     return null;
   }
 
-  // Hilfsfunktionen für spezifische Prüfungen
   static Future<bool> canUserSubmitPrice(String userId) async {
-    final limits = await checkUserLimits(
-      userId,
-      actionType: 'create_price',
-    );
-    print(
-      'canUserCreatePrice für $userId: ${limits['canCreatePrice']}',
-    );
+    final limits = await checkUserLimits(userId, actionType: 'create_price');
+    print('canUserCreatePrice für $userId: ${limits['canCreatePrice']}');
     return limits['canCreatePrice']!;
   }
 
@@ -126,7 +108,6 @@ class RateLimitService {
     return limits['canChangeProfileImage']!;
   }
 
-  // Funktion zum Aktualisieren des Profilbild-Änderungsdatums
   static Future<void> updateProfileImageChangeDate(String userId) async {
     try {
       await _firestore.collection('users').doc(userId).update({

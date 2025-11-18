@@ -1,4 +1,3 @@
-// lib/screens/profile_edit_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,7 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_price_tracker_app/services/image_upload_service.dart';
 import 'package:my_price_tracker_app/services/rate_limit_service.dart';
-import 'package:my_price_tracker_app/theme/app_theme.dart'; // ✅ NEU HINZUGEFÜGT
+import 'package:my_price_tracker_app/theme/app_theme.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -24,7 +23,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   String? _currentProfileImageUrl;
   bool _isLoading = false;
   bool _isSaving = false;
-  User? _currentUser; // Firebase Auth User
+  User? _currentUser;
 
   @override
   void initState() {
@@ -33,7 +32,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     if (_currentUser != null) {
       _loadUserProfile();
     } else {
-      // Falls kein User eingeloggt ist
       Navigator.pop(context);
     }
   }
@@ -44,7 +42,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Lade User-Daten aus Firestore
       final userDoc = await _firestore
           .collection('users')
           .doc(_currentUser!.uid)
@@ -60,7 +57,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           });
         }
       } else {
-        // Erstelle neuen User-Eintrag mit Firebase Auth Daten
         final username =
             _currentUser!.displayName ??
             _currentUser!.email?.split('@')[0] ??
@@ -110,11 +106,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Future<String?> _uploadProfileImage(File imageFile) async {
     if (_currentUser == null) return null;
 
-    // Prüfe Profilbild-Limit
     final canChange = await RateLimitService.canUserChangeProfileImage(
       _currentUser!.uid,
     );
-    
+
     if (!canChange) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -126,7 +121,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           ),
         );
       }
-      return _currentProfileImageUrl; // Altes Bild behalten
+      return _currentProfileImageUrl;
     }
 
     try {
@@ -177,13 +172,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // Validiere Username
       final username = _usernameController.text.trim();
       if (username.isEmpty) {
         throw Exception('Benutzername darf nicht leer sein');
       }
 
-      // Upload Profilbild falls geändert
       String? profileImageUrl = _currentProfileImageUrl;
       if (_profileImageFile != null) {
         profileImageUrl = await _uploadProfileImage(_profileImageFile!);
@@ -192,7 +185,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         }
       }
 
-      // Speichere Profildaten in Firestore
       await _firestore.collection('users').doc(_currentUser!.uid).set({
         'uid': _currentUser!.uid,
         'email': _currentUser!.email,
@@ -206,7 +198,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         SnackBar(content: Text('Profil erfolgreich gespeichert!')),
       );
 
-      Navigator.pop(context, true); // Erfolg zurückgeben
+      Navigator.pop(context, true);
     } catch (e) {
       print('Fehler beim Speichern des Profils: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -223,8 +215,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       appBar: AppBar(
         title: Text('Profil bearbeiten'),
         centerTitle: true,
-        backgroundColor: AppColors.primary, // ✅ THEME FARBE
-        foregroundColor: Colors.white, // ✅ THEME FARBE
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: Icon(Icons.save),
@@ -235,32 +227,26 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: EdgeInsets.all(AppSpacing.m), // ✅ THEME ABSTAND
+              padding: EdgeInsets.all(AppSpacing.m),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Profilbild-Abschnitt
                   _buildProfileImageSection(),
-                  SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
-                  // Username-Abschnitt
+                  SizedBox(height: AppSpacing.xxl),
+
                   _buildUsernameSection(),
-                  SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
-                  // Email-Anzeige (nicht editierbar)
+                  SizedBox(height: AppSpacing.xxl),
+
                   _buildEmailSection(),
-                  SizedBox(height: AppSpacing.xxl), // ✅ THEME ABSTAND
-                  // Speichern-Button
-                  // Speichern-Button (konsistent mit App-Design)
+                  SizedBox(height: AppSpacing.xxl),
+
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(
-                        AppRadius.large,
-                      ), // ✅ THEME RADIUS
+                      borderRadius: BorderRadius.circular(AppRadius.large),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(
-                            0.3,
-                          ), // ✅ THEME FARBE
+                          color: AppColors.primary.withOpacity(0.3),
                           blurRadius: 4,
                           offset: Offset(0, 2),
                         ),
@@ -270,17 +256,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       onPressed: _isSaving || _isLoading ? null : _saveProfile,
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(
-                          vertical: AppSpacing.m, // ✅ THEME ABSTAND
-                          horizontal: AppSpacing.xl, // ✅ THEME ABSTAND
+                          vertical: AppSpacing.m,
+                          horizontal: AppSpacing.xl,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppRadius.large,
-                          ), // ✅ THEME RADIUS
+                          borderRadius: BorderRadius.circular(AppRadius.large),
                         ),
-                        backgroundColor: AppColors.primary, // ✅ THEME FARBE
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        elevation: 0, // Entferne Standard-Elevation
+                        elevation: 0,
                       ),
                       child: _isSaving
                           ? Row(
@@ -290,14 +274,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                   color: Colors.white,
                                   strokeWidth: 2,
                                 ),
-                                SizedBox(
-                                  width: AppSpacing.s,
-                                ), // ✅ THEME ABSTAND
+                                SizedBox(width: AppSpacing.s),
                                 Text(
                                   'Speichern...',
                                   style: TextStyle(
-                                    fontSize: AppTypography
-                                        .body, // ✅ THEME TYPOGRAFIE
+                                    fontSize: AppTypography.body,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white,
                                   ),
@@ -307,8 +288,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           : Text(
                               'Profil speichern',
                               style: TextStyle(
-                                fontSize:
-                                    AppTypography.body, // ✅ THEME TYPOGRAFIE
+                                fontSize: AppTypography.body,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
                               ),
@@ -325,33 +305,32 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.large), // ✅ THEME RADIUS
+        borderRadius: BorderRadius.circular(AppRadius.large),
       ),
       child: Padding(
-        padding: EdgeInsets.all(AppSpacing.m), // ✅ THEME ABSTAND
+        padding: EdgeInsets.all(AppSpacing.m),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Profilbild',
               style: TextStyle(
-                fontSize: AppTypography.headline3, // ✅ THEME TYPOGRAFIE
+                fontSize: AppTypography.headline3,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
-            // Profilbild-Anzeige
+            SizedBox(height: AppSpacing.m),
+
             Center(
               child: Stack(
                 children: [
-                  // Aktuelles Profilbild oder Platzhalter
                   Container(
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.textDisabled, // ✅ THEME FARBE
+                        color: AppColors.textDisabled,
                         width: 2,
                       ),
                     ),
@@ -377,13 +356,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     ),
                   ),
 
-                  // Bearbeiten-Button
                   Positioned(
                     bottom: 0,
                     right: 0,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppColors.primary, // ✅ THEME FARBE
+                        color: AppColors.primary,
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
                       ),
@@ -401,8 +379,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               ),
             ),
 
-            SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
-            // Bild-Ändern-Button
+            SizedBox(height: AppSpacing.m),
+
             Center(
               child: TextButton(
                 onPressed: _pickProfileImage,
@@ -410,13 +388,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               ),
             ),
 
-            // Hinweis
             Center(
               child: Text(
                 'Unterstützte Formate: JPG, PNG (max. 5MB empfohlen)',
                 style: TextStyle(
-                  fontSize: AppTypography.bodySmall, // ✅ THEME TYPOGRAFIE
-                  color: AppColors.textSecondary, // ✅ THEME FARBE
+                  fontSize: AppTypography.bodySmall,
+                  color: AppColors.textSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -429,12 +406,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Widget _buildProfileImagePlaceholder() {
     return Container(
-      color: AppColors.cardBackground, // ✅ THEME FARBE
-      child: Icon(
-        Icons.person,
-        color: AppColors.textSecondary, // ✅ THEME FARBE
-        size: 50,
-      ),
+      color: AppColors.cardBackground,
+      child: Icon(Icons.person, color: AppColors.textSecondary, size: 50),
     );
   }
 
@@ -442,30 +415,28 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.large), // ✅ THEME RADIUS
+        borderRadius: BorderRadius.circular(AppRadius.large),
       ),
       child: Padding(
-        padding: EdgeInsets.all(AppSpacing.m), // ✅ THEME ABSTAND
+        padding: EdgeInsets.all(AppSpacing.m),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Benutzername',
               style: TextStyle(
-                fontSize: AppTypography.headline3, // ✅ THEME TYPOGRAFIE
+                fontSize: AppTypography.headline3,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.m),
 
             TextField(
               controller: _usernameController,
               decoration: InputDecoration(
                 labelText: 'Benutzername *',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    AppRadius.medium,
-                  ), // ✅ THEME RADIUS
+                  borderRadius: BorderRadius.circular(AppRadius.medium),
                 ),
                 prefixIcon: Icon(Icons.person),
                 hintText: 'Geben Sie Ihren Benutzernamen ein',
@@ -474,13 +445,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               enabled: !_isSaving,
             ),
 
-            SizedBox(height: AppSpacing.s), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.s),
 
             Text(
               'Ihr Benutzername wird in Bewertungen angezeigt',
               style: TextStyle(
-                fontSize: AppTypography.bodySmall, // ✅ THEME TYPOGRAFIE
-                color: AppColors.textSecondary, // ✅ THEME FARBE
+                fontSize: AppTypography.bodySmall,
+                color: AppColors.textSecondary,
               ),
             ),
           ],
@@ -493,48 +464,39 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.large), // ✅ THEME RADIUS
+        borderRadius: BorderRadius.circular(AppRadius.large),
       ),
       child: Padding(
-        padding: EdgeInsets.all(AppSpacing.m), // ✅ THEME ABSTAND
+        padding: EdgeInsets.all(AppSpacing.m),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'E-Mail Adresse',
               style: TextStyle(
-                fontSize: AppTypography.headline3, // ✅ THEME TYPOGRAFIE
+                fontSize: AppTypography.headline3,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: AppSpacing.m), // ✅ THEME ABSTAND
+            SizedBox(height: AppSpacing.m),
 
             Container(
               padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.s, // ✅ THEME ABSTAND
-                vertical: AppSpacing.m, // ✅ THEME ABSTAND
+                horizontal: AppSpacing.s,
+                vertical: AppSpacing.m,
               ),
               decoration: BoxDecoration(
-                border: Border.all(
-                  color: AppColors.textDisabled, // ✅ THEME FARBE
-                ),
-                borderRadius: BorderRadius.circular(
-                  AppRadius.medium,
-                ), // ✅ THEME RADIUS
+                border: Border.all(color: AppColors.textDisabled),
+                borderRadius: BorderRadius.circular(AppRadius.medium),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.email,
-                    color: AppColors.textSecondary, // ✅ THEME FARBE
-                  ),
-                  SizedBox(width: AppSpacing.s), // ✅ THEME ABSTAND
+                  Icon(Icons.email, color: AppColors.textSecondary),
+                  SizedBox(width: AppSpacing.s),
                   Expanded(
                     child: Text(
                       _currentUser?.email ?? 'Keine E-Mail',
-                      style: TextStyle(
-                        fontSize: AppTypography.body, // ✅ THEME TYPOGRAFIE
-                      ),
+                      style: TextStyle(fontSize: AppTypography.body),
                     ),
                   ),
                 ],

@@ -1,4 +1,3 @@
-// lib/widgets/expandable_fab.dart
 import 'package:flutter/material.dart';
 
 class ExpandableFab extends StatefulWidget {
@@ -20,7 +19,7 @@ class _ExpandableFabState extends State<ExpandableFab> {
 
   void _toggleFab() {
     setState(() {
-      _isFabExpanded = !_isFabExpanded; // Wechselt den Zustand des FABs
+      _isFabExpanded = !_isFabExpanded;
     });
   }
 
@@ -30,30 +29,29 @@ class _ExpandableFabState extends State<ExpandableFab> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         if (_isFabExpanded) ...[
-          // Erster Button (Preis hinzufügen)
           FloatingActionButton(
             heroTag: 'addPriceFab',
             backgroundColor: Theme.of(context).colorScheme.secondary,
             foregroundColor: Theme.of(context).colorScheme.onSecondary,
             onPressed: () {
-              widget.onAddPressed(); // Preis hinzufügen
+              widget.onAddPressed();
             },
             child: Icon(Icons.add),
           ),
           SizedBox(height: 8),
-          // Zweiter Button (Teilen)
+
           FloatingActionButton(
             heroTag: 'shareFab',
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             onPressed: () {
-              widget.onSharePressed(); // Teilen
+              widget.onSharePressed();
             },
             child: Icon(Icons.share),
           ),
           SizedBox(height: 8),
         ],
-        // Haupt-FAB (aufklappbar)
+
         FloatingActionButton(
           heroTag: 'mainFab',
           backgroundColor: Theme.of(context).colorScheme.primary,

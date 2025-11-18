@@ -1,4 +1,3 @@
-// lib/theme/theme_extension.dart
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 

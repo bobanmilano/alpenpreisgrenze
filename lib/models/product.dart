@@ -1,4 +1,3 @@
-// lib/models/product.dart
 class Product {
   final String? barcode;
   final String? productName;

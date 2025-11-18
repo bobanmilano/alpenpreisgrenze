@@ -1,4 +1,3 @@
-// lib/screens/scanned_prices_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:my_price_tracker_app/theme/app_theme.dart';
@@ -96,20 +95,16 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
     }
   }
 
-  // 🔍 LUPEN-BUTTON: Suche ODER Zurücksetzen
   void _onSearchPressed() {
     final query = _searchController.text.trim().toLowerCase();
 
     if (query.isEmpty) {
-      // Leeres Feld → zeige alle Scans
       _resetToFullList();
     } else {
-      // Führe Suche durch
       _performSearch(query);
     }
   }
 
-  // 🗙 X-BUTTON: Immer zurücksetzen
   void _onResetPressed() {
     _searchController.clear();
     _resetToFullList();
@@ -117,7 +112,7 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
 
   void _resetToFullList() {
     setState(() => _isLoading = true);
-    _loadInitialData(); // Lädt "Alle Scans" etc.
+    _loadInitialData();
   }
 
   Future<void> _performSearch(String query) async {
@@ -148,7 +143,6 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
   }
 
   void _onScroll() {
-    // Paginierung nur im Filtermodus (niemals bei Suche)
     if (_searchController.text.trim().isNotEmpty) return;
 
     if (_searchController.text.trim().isNotEmpty) {
@@ -166,7 +160,7 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
   void _updateFilter(String filter) {
     if (filter == _activeFilter) return;
     _activeFilter = filter;
-    _resetToFullList(); // Filterwechsel → immer volle Liste
+    _resetToFullList();
   }
 
   void _showFilterDialog() {
@@ -268,20 +262,20 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
           ),
           child: Column(
             children: [
-              // 🔍 SUCHZEILE MIT ZWEI BUTTONS VORNE
               Padding(
                 padding: EdgeInsets.all(AppSpacing.m),
                 child: Row(
                   children: [
-                    // 🗙 RESET-BUTTON (links)
                     ElevatedButton(
                       onPressed: _onResetPressed,
                       style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.secondary,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        padding: EdgeInsets.all(AppSpacing.s), // z. B. 8.0
+                        padding: EdgeInsets.all(AppSpacing.s),
                         elevation: 0,
                       ),
                       child: Icon(
@@ -293,7 +287,7 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
                       ),
                     ),
                     SizedBox(width: AppSpacing.s),
-                    // 🔍 SUCH-BUTTON (rechts davon)
+
                     ElevatedButton(
                       onPressed: _onSearchPressed,
                       style: ElevatedButton.styleFrom(
@@ -311,7 +305,7 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
                       ),
                     ),
                     SizedBox(width: AppSpacing.s),
-                    // TEXTFELD
+
                     Expanded(
                       child: TextField(
                         controller: _searchController,
@@ -319,13 +313,12 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
                           hintText: 'Produkt, Händler oder Stadt',
                           border: OutlineInputBorder(),
                         ),
-                        
                       ),
                     ),
                   ],
                 ),
               ),
-              // 📋 LISTE
+
               Expanded(
                 child: _displayedPrices.isEmpty
                     ? _isLoading
@@ -354,6 +347,7 @@ class _ScannedPricesScreenState extends State<ScannedPricesScreen> {
                             price: entry.price,
                             city: entry.city,
                             storeName: entry.store,
+                            quantity: entry.quantity,
                             onTap: () async {
                               try {
                                 final product =

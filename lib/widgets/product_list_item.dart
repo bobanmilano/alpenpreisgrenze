@@ -8,7 +8,8 @@ class ProductListItem extends StatelessWidget {
   final String? manufacturer;
   final double? price;
   final String? storeName;
-  final String? city; // ✅ Neues Argument für die Stadt
+  final String? city;
+  final String? quantity;
   final VoidCallback onTap;
 
   const ProductListItem({
@@ -18,7 +19,8 @@ class ProductListItem extends StatelessWidget {
     this.manufacturer,
     this.price,
     this.storeName,
-    this.city, // ✅ Hinzugefügtes Argument
+    this.city,
+    this.quantity,
     required this.onTap,
   }) : super(key: key);
 
@@ -29,8 +31,16 @@ class ProductListItem extends StatelessWidget {
     }
     String logoPathJpg = 'assets/logos/$lowerCaseName.jpg';
     String logoPathJpgUpper = 'assets/logos/$lowerCaseName.JPG';
-    String logoOriginal = 'assets/logos/$storeName.jpg'; // ✅ Originalname
-    String logoOriginalUpper = 'assets/logos/$storeName.JPG'; // ✅ Originalname
+    String logoOriginal = 'assets/logos/$storeName.jpg';
+    String logoOriginalUpper = 'assets/logos/$storeName.JPG';
+
+    if (lowerCaseName == 'müller') {
+      lowerCaseName = 'mueller';
+      logoPathJpg = 'assets/logos/$lowerCaseName.png';
+      logoPathJpgUpper = 'assets/logos/$lowerCaseName.PNG';
+      logoOriginal = 'assets/logos/$storeName.png';
+      logoOriginalUpper = 'assets/logos/$storeName.PNG';
+    }
 
     return Image.asset(
       logoOriginal,
@@ -69,13 +79,12 @@ class ProductListItem extends StatelessWidget {
   }
 
   String _getDisplayString(String? input, String attributeName) {
-    if (input == null) return '${attributeName} N/A'; // oder wie auch immer du mit null umgehst
-  return toProperCase(input);
+    if (input == null) return '${attributeName} N/A';
+    return toProperCase(input);
   }
 
   @override
   Widget build(BuildContext context) {
-    
     return InkWell(
       onTap: onTap,
       child: Card(
@@ -102,13 +111,30 @@ class ProductListItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _getDisplayString(productName, 'Produktname'),
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _getDisplayString(productName, 'Produktname'),
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        if (quantity != null && quantity!.isNotEmpty) ...[
+                          SizedBox(width: 8),
+                          Text(
+                            '(${quantity})',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.grey[600],
+                                ),
+                          ),
+                        ],
+                      ],
                     ),
+
                     Text('Hersteller: ${manufacturer ?? 'N/A'}'),
                     Text('Preis: €${price?.toStringAsFixed(2) ?? 'N/A'}'),
-                    // ✅ Neue Zeile: Shop-Logo/Text und Stadt nebeneinander
                     Row(
                       children: [
                         Flexible(
@@ -117,13 +143,12 @@ class ProductListItem extends StatelessWidget {
                             storeName ?? 'N/A',
                           ),
                         ),
-                        const SizedBox(width: 8), // Kleiner Abstand
-                        // In der Row, wo Shop und Stadt angezeigt werden
+                        const SizedBox(width: 8),
                         Flexible(
                           child: Text(
                             (city != null && city!.isNotEmpty)
-                                ?   _getDisplayString(city, 'Stadt')!
-                                : 'N/A', // ✅ Prüft auf null und Leerstring
+                                ? _getDisplayString(city, 'Stadt')!
+                                : 'N/A',
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(fontStyle: FontStyle.italic),
                           ),

@@ -7,7 +7,7 @@ import 'price_content.dart';
 import '../services/firebase_service.dart';
 
 class PriceCard extends StatefulWidget {
-  final String title; // 'Österreich' oder 'Deutschland'
+  final String title;
   final String targetCountry;
   final String barcode;
   final String userId;
@@ -42,7 +42,7 @@ class _PriceCardState extends State<PriceCard>
   late final ValueNotifier<int> _currentIndex;
 
   @override
-  bool get wantKeepAlive => true; // Behalte den Zustand bei
+  bool get wantKeepAlive => true; 
 
   @override
   void initState() {
@@ -60,7 +60,7 @@ class _PriceCardState extends State<PriceCard>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Wichtig für AutomaticKeepAliveClientMixin
+    super.build(context);
     final isAT = widget.title == 'Österreich';
     return Expanded(
       child: Card(
@@ -157,14 +157,13 @@ class _PriceCardState extends State<PriceCard>
 
   String _getDisplayString(String? input, String attributeName) {
     if (input == null)
-      return '${attributeName} N/A'; // oder wie auch immer du mit null umgehst
+      return '${attributeName} N/A'; 
     return toProperCase(input);
   }
 
   Widget _buildPriceSlider(List<PriceEntry> prices, BuildContext context) {
     return Column(
       children: [
-        // Fahne und Stadtname oben
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
@@ -179,12 +178,11 @@ class _PriceCardState extends State<PriceCard>
               },
             ),
             SizedBox(width: 8),
-            // Dynamischer Stadtname mit ValueListenableBuilder
             ValueListenableBuilder<int>(
               valueListenable: _currentIndex,
               builder: (context, currentIndex, _) {
                 return Text(
-                  _getDisplayString(prices[currentIndex].city, "Stadt"), // Falls city null ist
+                  _getDisplayString(prices[currentIndex].city, "Stadt"),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -194,13 +192,11 @@ class _PriceCardState extends State<PriceCard>
           ],
         ),
         SizedBox(height: 6),
-        // Container mit PageView und Pfeilen als Stack
         Container(
           height: 220,
           child: Stack(
-            alignment: Alignment.center, // Zentriert den PageView
+            alignment: Alignment.center, 
             children: [
-              // PageView im Hintergrund
               PageView.builder(
                 controller: _pageController,
                 itemCount: prices.length,
@@ -215,13 +211,11 @@ class _PriceCardState extends State<PriceCard>
                   return Center(child: PriceContent(priceEntry: price));
                 },
               ),
-              // Pfeile über dem PageView
-              // Linker Pfeil - sehr nah am linken Rand
               Align(
                 alignment: Alignment(
                   -1,
                   0,
-                ), // x = -0.95, sehr nah am linken Rand
+                ), 
                 child: ValueListenableBuilder<int>(
                   valueListenable: _currentIndex,
                   builder: (context, currentIndex, _) {
@@ -240,8 +234,7 @@ class _PriceCardState extends State<PriceCard>
                       color: currentIndex > 0
                           ? Theme.of(context).iconTheme.color
                           : Colors.grey.withOpacity(0),
-                      padding: EdgeInsets.all(2), // Minimaler Abstand
-                      // Optional: Hintergrund für den Button, um ihn besser sichtbar zu machen
+                      padding: EdgeInsets.all(2), 
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.white.withOpacity(0.8),
                         shape: CircleBorder(),
@@ -250,12 +243,11 @@ class _PriceCardState extends State<PriceCard>
                   },
                 ),
               ),
-              // Rechter Pfeil - sehr nah am rechten Rand
               Align(
                 alignment: Alignment(
                   1,
                   0,
-                ), // x = 0.95, sehr nah am rechten Rand
+                ), 
                 child: ValueListenableBuilder<int>(
                   valueListenable: _currentIndex,
                   builder: (context, currentIndex, _) {
@@ -274,8 +266,7 @@ class _PriceCardState extends State<PriceCard>
                       color: currentIndex < prices.length - 1
                           ? Theme.of(context).iconTheme.color
                           : Colors.grey.withOpacity(0),
-                      padding: EdgeInsets.all(2), // Minimaler Abstand
-                      // Optional: Hintergrund für den Button, um ihn besser sichtbar zu machen
+                      padding: EdgeInsets.all(2), 
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.white.withOpacity(0.8),
                         shape: CircleBorder(),
@@ -287,20 +278,18 @@ class _PriceCardState extends State<PriceCard>
             ],
           ),
         ),
-        // Keine Pfeile mehr am unteren Ende
       ],
     );
   }
 
   Widget _buildNoPriceWidget(BuildContext context) {
     return SizedBox(
-      height: 250, // Feste Höhe für die Card
+      height: 250, 
       child: Column(
         mainAxisAlignment:
-            MainAxisAlignment.spaceBetween, // Verteilt die Kinder
+            MainAxisAlignment.spaceBetween, 
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Fahne oben links
           Row(
             children: [
               Image.asset(
@@ -315,7 +304,6 @@ class _PriceCardState extends State<PriceCard>
               ),
             ],
           ),
-          // Vertikal und horizontal zentrierter Text
           Expanded(
             child: Center(
               child: Text(
@@ -327,7 +315,6 @@ class _PriceCardState extends State<PriceCard>
               ),
             ),
           ),
-          // Button am unteren Rand
           Padding(
             padding: const EdgeInsets.all(4.0),
             child: ElevatedButton(

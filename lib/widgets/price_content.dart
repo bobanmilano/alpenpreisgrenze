@@ -1,9 +1,7 @@
-// lib/widgets/price_content.dart
 import 'package:flutter/material.dart';
 import 'package:my_price_tracker_app/utils/price_utils.dart';
 import '../models/price_entry.dart';
 
-/// Ein Widget zur Darstellung des Inhalts einer Preiskarte (Preis, Menge, Logo, Bild).
 class PriceContent extends StatelessWidget {
   final PriceEntry priceEntry;
 
@@ -11,17 +9,16 @@ class PriceContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     double? pricePerKg = calculatePricePerUnit(
       priceEntry.price,
       priceEntry.quantity,
     );
     String priceText = '€${priceEntry.price.toStringAsFixed(2)}';
     if (pricePerKg != null) {
-      priceText += '\n(€${pricePerKg.toStringAsFixed(2)}/${getUnitFromQuantity(priceEntry.quantity)})';
+      priceText +=
+          '\n(€${pricePerKg.toStringAsFixed(2)}/${getUnitFromQuantity(priceEntry.quantity)})';
     }
 
-    // Hole den aktuellen Theme-Textstil für den Hauptpreis
     final TextStyle? headlineStyle = Theme.of(
       context,
     ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold);
@@ -33,17 +30,13 @@ class PriceContent extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              priceText.split('\n')[0],
-              style: headlineStyle, // Verwende den definierten Stil
-            ),
-            SizedBox(width: 8.0), // Reduziert
+            Text(priceText.split('\n')[0], style: headlineStyle),
+            SizedBox(width: 8.0),
             if (priceEntry.quantity != null && priceEntry.quantity!.isNotEmpty)
               Text(
                 '(${priceEntry.quantity})',
                 style: headlineStyle?.copyWith(
                   fontWeight: FontWeight.normal,
-                  // Setze die Schriftgröße auf die Hälfte der Hauptpreisgröße
                   fontSize: (headlineStyle?.fontSize ?? 14.0) * 0.5,
                 ),
               ),
@@ -51,24 +44,25 @@ class PriceContent extends StatelessWidget {
         ),
         if (pricePerKg != null)
           Text(
-            // ignore: unnecessary_null_comparison
-            '(€' + pricePerKg.toStringAsFixed(2) + '/' + getDisplayUnit(priceEntry.quantity)! + ')', 
-            //priceEntry.quantity!,
+            '(€' +
+                pricePerKg.toStringAsFixed(2) +
+                '/' +
+                getDisplayUnit(priceEntry.quantity)! +
+                ')',
             style: Theme.of(context).textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
-        SizedBox(height: 4), // Reduziert
+        SizedBox(height: 4),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [_buildStoreLogoOrText(context, priceEntry.store)],
         ),
-        SizedBox(height: 4), // Reduziert
- 
+        SizedBox(height: 4),
+
         if (priceEntry.productImageURL != null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4.0),
             child: GestureDetector(
-              // ✅ Neuer Wrapper
               onTap: () {
                 _showFullImage(context, priceEntry.productImageURL!);
               },
@@ -102,7 +96,6 @@ class PriceContent extends StatelessWidget {
               children: [
                 Expanded(
                   child: InteractiveViewer(
-                    // ✅ Zoom- und Scroll-Funktion
                     child: Image.network(
                       imageUrl,
                       fit: BoxFit.contain,
@@ -114,7 +107,7 @@ class PriceContent extends StatelessWidget {
                 ),
                 SizedBox(height: 8),
                 ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(), // Schließen
+                  onPressed: () => Navigator.of(context).pop(),
                   child: Text('Schließen'),
                 ),
               ],
@@ -132,16 +125,21 @@ class PriceContent extends StatelessWidget {
     }
     String logoPath = 'assets/logos/$lowerCaseName.jpg';
     String logoPathUpper = 'assets/logos/$lowerCaseName.JPG';
+    if (lowerCaseName == 'müller') {
+      lowerCaseName = 'mueller';
+      logoPath = 'assets/logos/$lowerCaseName.png';
+      logoPathUpper = 'assets/logos/$lowerCaseName.PNG';
+    }
 
     return Image.asset(
       logoPath,
-      height: 32, // Geringere Höhe
-      width: 72, // Geringere Breite
+      height: 32,
+      width: 72,
       errorBuilder: (context, error, stackTrace) {
         return Image.asset(
           logoPathUpper,
-          height: 32, // Geringere Höhe
-          width: 72, // Geringere Breite
+          height: 32,
+          width: 72,
           errorBuilder: (context, error, stackTrace) {
             return Text(
               storeName,
