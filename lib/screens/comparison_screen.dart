@@ -43,20 +43,28 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   bool _isFabExpanded = false;
   bool _dialogShown = false;
   bool _initialCheckDone = false;
+  List<PriceEntry> _allPrices = [];
+
   @override
   void initState() {
     super.initState();
     _loadUserId();
     _screenshotController = ScreenshotController();
+    print('[ComparisonScreen] initState aufgerufen - fromScan: ${widget.fromScan}');
+    print('[ComparisonScreen] Product Barcode: ${widget.product.barcode}');
+    print('[ComparisonScreen] Initial _currentATPrice.value: ${_currentATPrice.value}');
+    print('[ComparisonScreen] Initial _currentDEPrice.value: ${_currentDEPrice.value}');
   }
 
   Future<void> _loadUserId() async {
     try {
+      final userId = _firebaseService.getCurrentUserId();
+      print('[ComparisonScreen] _loadUserId - Benutzer-ID geladen: $userId');
       setState(() {
-        _userId = _firebaseService.getCurrentUserId();
+        _userId = userId;
       });
     } catch (e) {
-      print('Fehler beim Abrufen der Benutzer-ID: $e');
+      print('[ComparisonScreen] Fehler beim Abrufen der Benutzer-ID: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Fehler beim Abrufen der Benutzer-ID.')),
       );
@@ -64,14 +72,22 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   }
 
   void _updateCurrentATPrice(PriceEntry? price) {
+    print('[ComparisonScreen] _updateCurrentATPrice aufgerufen mit: ${price?.price} in ${price?.country}');
     _currentATPrice.value = price;
+    print('[ComparisonScreen] _currentATPrice.value nach Update: ${_currentATPrice.value?.price} in ${_currentATPrice.value?.country}');
   }
 
   void _updateCurrentDEPrice(PriceEntry? price) {
+    print('[ComparisonScreen] _updateCurrentDEPrice aufgerufen mit: ${price?.price} in ${price?.country}');
     _currentDEPrice.value = price;
+    print('[ComparisonScreen] _currentDEPrice.value nach Update: ${_currentDEPrice.value?.price} in ${_currentDEPrice.value?.country}');
   }
 
   void _showPriceExistsDialog(PriceEntry atPrice, PriceEntry dePrice) {
+    print('[ComparisonScreen] _showPriceExistsDialog aufgerufen');
+    print('[ComparisonScreen] AT Preis: ${atPrice.price} in ${atPrice.country} von ${atPrice.displayStore}');
+    print('[ComparisonScreen] DE Preis: ${dePrice.price} in ${dePrice.country} von ${dePrice.displayStore}');
+    
     if (!_dialogShown) {
       setState(() {
         _dialogShown = true;
@@ -82,6 +98,8 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
       final atStore = atPrice.displayStore;
       final deStore = dePrice.displayStore;
+
+      print('[ComparisonScreen] Dialog wird angezeigt - AT: €${atPriceValue.toStringAsFixed(2)} (${atStore}), DE: €${dePriceValue.toStringAsFixed(2)} (${deStore})');
 
       showDialog(
         context: context,
@@ -97,12 +115,14 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           actions: [
             TextButton(
               onPressed: () {
+                print('[ComparisonScreen] Dialog - ABBRECHEN gedrückt');
                 Navigator.of(context).pop();
               },
               child: Text('ABBRECHEN'),
             ),
             TextButton(
               onPressed: () {
+                print('[ComparisonScreen] Dialog - PREIS HINZUFÜGEN gedrückt');
                 Navigator.of(context).pop();
                 _showAddPriceDialog(context);
               },
@@ -111,6 +131,8 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           ],
         ),
       );
+    } else {
+      print('[ComparisonScreen] Dialog wurde bereits gezeigt, wird übersprungen');
     }
   }
 
@@ -118,7 +140,12 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
     final atPrice = _currentATPrice.value;
     final dePrice = _currentDEPrice.value;
 
+    print('[ComparisonScreen] _onSharePressed aufgerufen');
+    print('[ComparisonScreen] Aktuelle AT Preis: ${atPrice?.price} in ${atPrice?.country}');
+    print('[ComparisonScreen] Aktuelle DE Preis: ${dePrice?.price} in ${dePrice?.country}');
+
     if (atPrice == null || dePrice == null) {
+      print('[ComparisonScreen] _onSharePressed - Nicht genügend Daten zum Teilen verfügbar');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Nicht genügend Daten zum Teilen verfügbar.')),
       );
@@ -136,6 +163,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                 leading: Icon(Icons.email),
                 title: Text('Beschwerde-E-Mail senden'),
                 onTap: () async {
+                  print('[ComparisonScreen] E-Mail senden ausgewählt');
                   Navigator.pop(context);
                   await _sendComplaintEmail(atPrice, dePrice);
                 },
@@ -144,6 +172,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                 leading: Icon(Icons.share),
                 title: Text('Auf Social Media teilen'),
                 onTap: () async {
+                  print('[ComparisonScreen] Social Media teilen ausgewählt');
                   Navigator.pop(context);
                   await _captureAndShareScreenshot(atPrice, dePrice);
                 },
@@ -152,6 +181,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                 leading: Icon(Icons.screenshot),
                 title: Text('Screenshot machen'),
                 onTap: () async {
+                  print('[ComparisonScreen] Screenshot machen ausgewählt');
                   Navigator.pop(context);
                   await _captureScreenshotOnly();
                 },
@@ -168,15 +198,21 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
     PriceEntry dePrice,
   ) async {
     try {
+      print('[ComparisonScreen] _sendComplaintEmail aufgerufen');
+      print('[ComparisonScreen] AT Preis: ${atPrice.price} in ${atPrice.country} von ${atPrice.displayStore}');
+      print('[ComparisonScreen] DE Preis: ${dePrice.price} in ${dePrice.country} von ${dePrice.displayStore}');
+
       if (atPrice.displayStore.isEmpty) {
+        print('[ComparisonScreen] Fehler: Der österreichische Shop ist unbekannt');
         throw Exception('Der österreichische Shop ist unbekannt.');
       }
 
       final emailMap = await _firebaseService.getSupportEmails().first;
-      print(emailMap);
+      print('[ComparisonScreen] Support E-Mails geladen: $emailMap');
 
       final supportEmail = emailMap[atPrice.displayStore];
       if (supportEmail == null) {
+        print('[ComparisonScreen] Keine E-Mail-Adresse für ${atPrice.displayStore} gefunden');
         throw Exception(
           'Keine E-Mail-Adresse für ${atPrice.displayStore} gefunden.',
         );
@@ -184,6 +220,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
       final emailTemplate = await _firebaseService.getEmailTemplate();
       if (emailTemplate == null) {
+        print('[ComparisonScreen] E-Mail-Vorlage konnte nicht geladen werden');
         throw Exception('E-Mail-Vorlage konnte nicht geladen werden.');
       }
 
@@ -209,6 +246,8 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           ? '${percentageDiff.abs().toStringAsFixed(2)} % höher (pro $displayUnit)'
           : '${percentageDiff.abs().toStringAsFixed(2)} % höher';
 
+      print('[ComparisonScreen] Berechnete Prozentdifferenz: $percentageDiffText');
+
       final emailBody = _buildEmailBody(
         emailTemplate,
         atPrice.displayStore,
@@ -228,6 +267,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
         throw Exception('E-Mail konnte nicht geöffnet werden.');
       }
     } catch (e) {
+      print('[ComparisonScreen] Fehler in _sendComplaintEmail: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
@@ -251,10 +291,13 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       final atQuantityNum = parseQuantity(atProductWeight);
       final deQuantityNum = parseQuantity(deProductWeight);
 
+      print('[ComparisonScreen] Mengenvergleich - AT: $atQuantityNum, DE: $deQuantityNum');
+
       if (atQuantityNum != null &&
           deQuantityNum != null &&
           atQuantityNum < deQuantityNum) {
         isShrinkflationDetected = true;
+        print('[ComparisonScreen] Shrinkflation erkannt - AT Menge kleiner als DE Menge');
       }
     }
 
@@ -279,6 +322,10 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
     PriceEntry dePrice,
   ) async {
     try {
+      print('[ComparisonScreen] _captureAndShareScreenshot aufgerufen');
+      print('[ComparisonScreen] AT Preis: ${atPrice.price} in ${atPrice.country}');
+      print('[ComparisonScreen] DE Preis: ${dePrice.price} in ${dePrice.country}');
+
       final imageBytes = await _screenshotController.capture();
       if (imageBytes == null) {
         throw Exception('Screenshot konnte nicht erstellt werden.');
@@ -297,8 +344,11 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           'Deutschland: €${dePrice.price.toStringAsFixed(2)} (${dePrice.quantity})\n'
           '#ÖsterreichAufschlag #Preisvergleich';
 
+      print('[ComparisonScreen] Share Text: $shareText');
+
       await Share.shareXFiles([XFile(filePath)], text: shareText);
     } catch (e) {
+      print('[ComparisonScreen] Fehler in _captureAndShareScreenshot: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Fehler beim Teilen: $e')));
@@ -307,6 +357,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
   Future<void> _captureScreenshotOnly() async {
     try {
+      print('[ComparisonScreen] _captureScreenshotOnly aufgerufen');
       final imageBytes = await _screenshotController.capture();
       if (imageBytes == null) {
         throw Exception('Screenshot konnte nicht erstellt werden.');
@@ -346,6 +397,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
         },
       );
     } catch (e) {
+      print('[ComparisonScreen] Fehler in _captureScreenshotOnly: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Fehler beim Erstellen/Speichern des Screenshots: $e'),
@@ -355,6 +407,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   }
 
   void _showAddPriceDialog(BuildContext context) {
+    print('[ComparisonScreen] _showAddPriceDialog aufgerufen');
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -363,6 +416,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
         actions: [
           TextButton(
             onPressed: () {
+              print('[ComparisonScreen] Österreich ausgewählt in Dialog');
               Navigator.pop(context);
               Navigator.push(
                 context,
@@ -378,6 +432,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           ),
           TextButton(
             onPressed: () {
+              print('[ComparisonScreen] Deutschland ausgewählt in Dialog');
               Navigator.pop(context);
               Navigator.push(
                 context,
@@ -398,6 +453,10 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('[ComparisonScreen] build aufgerufen');
+    print('[ComparisonScreen] Aktuelle _currentATPrice.value: ${_currentATPrice.value?.price} in ${_currentATPrice.value?.country}');
+    print('[ComparisonScreen] Aktuelle _currentDEPrice.value: ${_currentDEPrice.value?.price} in ${_currentDEPrice.value?.country}');
+
     final maxHeight = MediaQuery.of(context).size.height / 3;
     final theme = Theme.of(context);
     return Scaffold(
@@ -479,20 +538,44 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                     widget.product.barcode!,
                   ),
                   builder: (context, snapshot) {
+                    print('[ComparisonScreen] StreamBuilder - ConnectionState: ${snapshot.connectionState}');
+                    print('[ComparisonScreen] StreamBuilder - HasError: ${snapshot.hasError}');
+                    if (snapshot.hasError) {
+                      print('[ComparisonScreen] StreamBuilder - Error: ${snapshot.error}');
+                    }
+                    if (snapshot.hasData) {
+                      print('[ComparisonScreen] StreamBuilder - Anzahl Preise erhalten: ${snapshot.data!.length}');
+                    }
+
                     if (snapshot.connectionState == ConnectionState.waiting) {
+                      print('[ComparisonScreen] StreamBuilder - Wartet auf Daten...');
                       return Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
+                      print('[ComparisonScreen] StreamBuilder - Fehler beim Laden der Preise: ${snapshot.error}');
                       return Text('Fehler: ${snapshot.error}');
                     }
 
                     final allPrices = snapshot.data ?? [];
+                    _allPrices = allPrices; // Speichere die Preise lokal
+                    print('[ComparisonScreen] StreamBuilder - Alle Preise erhalten: ${allPrices.length}');
+                    for (int i = 0; i < allPrices.length; i++) {
+                      final price = allPrices[i];
+                      print('[ComparisonScreen] Preis $i: ${price.price} in ${price.country} am ${price.timestamp} von ${price.displayStore}');
+                    }
+
                     final now = DateTime.now();
                     final oneMonthAgo = now.subtract(Duration(days: 365));
 
                     final filteredPrices = allPrices
                         .where((price) => price.timestamp.isAfter(oneMonthAgo))
                         .toList();
+
+                    print('[ComparisonScreen] StreamBuilder - Preise nach Filter (letzte 365 Tage): ${filteredPrices.length}');
+                    for (int i = 0; i < filteredPrices.length; i++) {
+                      final price = filteredPrices[i];
+                      print('[ComparisonScreen] Gefilterter Preis $i: ${price.price} in ${price.country} am ${price.timestamp}');
+                    }
 
                     final atPrices =
                         filteredPrices
@@ -506,49 +589,91 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                             .toList()
                           ..sort((a, b) => a.price.compareTo(b.price));
 
+                    print('[ComparisonScreen] StreamBuilder - AT Preise: ${atPrices.length}');
+                    for (int i = 0; i < atPrices.length; i++) {
+                      final price = atPrices[i];
+                      print('[ComparisonScreen] AT Preis $i: ${price.price} in ${price.country} am ${price.timestamp} von ${price.displayStore}');
+                    }
+                    
+                    print('[ComparisonScreen] StreamBuilder - DE Preise: ${dePrices.length}');
+                    for (int i = 0; i < dePrices.length; i++) {
+                      final price = dePrices[i];
+                      print('[ComparisonScreen] DE Preis $i: ${price.price} in ${price.country} am ${price.timestamp} von ${price.displayStore}');
+                    }
+
                     if (!_initialCheckDone && widget.fromScan) {
+                      print('[ComparisonScreen] Initialer Check - fromScan ist true, initialCheckDone ist false');
                       _initialCheckDone = true;
 
                       if (atPrices.isNotEmpty && dePrices.isNotEmpty) {
-                        _currentATPrice.value = atPrices.first;
-                        _currentDEPrice.value = dePrices.first;
+                        print('[ComparisonScreen] Initialer Check - Beide Länder haben Preise');
+                        final newATPrice = atPrices.first;
+                        final newDEPrice = dePrices.first;
+                        
+                        print('[ComparisonScreen] Initialer Check - Setze AT Preis: ${newATPrice.price} in ${newATPrice.country}');
+                        print('[ComparisonScreen] Initialer Check - Setze DE Preis: ${newDEPrice.price} in ${newDEPrice.country}');
+                        
+                        _currentATPrice.value = newATPrice;
+                        _currentDEPrice.value = newDEPrice;
+                        
+                        print('[ComparisonScreen] Initialer Check - Nach Setzen - AT: ${_currentATPrice.value?.price}, DE: ${_currentDEPrice.value?.price}');
 
                         WidgetsBinding.instance.addPostFrameCallback((_) {
+                          print('[ComparisonScreen] PostFrameCallback - Prüfe Dialog Anzeige');
                           if (!_dialogShown) {
-                            _showPriceExistsDialog(
-                              atPrices.first,
-                              dePrices.first,
-                            );
+                            print('[ComparisonScreen] PostFrameCallback - Zeige Preis Exists Dialog');
+                            _showPriceExistsDialog(newATPrice, newDEPrice);
+                          } else {
+                            print('[ComparisonScreen] PostFrameCallback - Dialog bereits gezeigt');
                           }
                         });
                       } else {
-                        if (atPrices.isNotEmpty)
-                          _currentATPrice.value = atPrices.first;
-                        if (dePrices.isNotEmpty)
-                          _currentDEPrice.value = dePrices.first;
+                        print('[ComparisonScreen] Initialer Check - Keine Preise für beide Länder vorhanden');
+                        if (atPrices.isNotEmpty) {
+                          final newATPrice = atPrices.first;
+                          print('[ComparisonScreen] Initialer Check - Setze AT Preis: ${newATPrice.price}');
+                          _currentATPrice.value = newATPrice;
+                        }
+                        if (dePrices.isNotEmpty) {
+                          final newDEPrice = dePrices.first;
+                          print('[ComparisonScreen] Initialer Check - Setze DE Preis: ${newDEPrice.price}');
+                          _currentDEPrice.value = newDEPrice;
+                        }
                       }
                     } else {
-                      if (atPrices.isNotEmpty &&
-                          _currentATPrice.value == null) {
-                        _currentATPrice.value = atPrices.first;
+                      print('[ComparisonScreen] Initialer Check - Kein initialer Check (fromScan: ${widget.fromScan}, initialCheckDone: $_initialCheckDone)');
+                      
+                      if (atPrices.isNotEmpty && _currentATPrice.value == null) {
+                        final newATPrice = atPrices.first;
+                        print('[ComparisonScreen] Setze AT Preis weil aktueller Wert null: ${newATPrice.price}');
+                        _currentATPrice.value = newATPrice;
                       }
-                      if (dePrices.isNotEmpty &&
-                          _currentDEPrice.value == null) {
-                        _currentDEPrice.value = dePrices.first;
+                      if (dePrices.isNotEmpty && _currentDEPrice.value == null) {
+                        final newDEPrice = dePrices.first;
+                        print('[ComparisonScreen] Setze DE Preis weil aktueller Wert null: ${newDEPrice.price}');
+                        _currentDEPrice.value = newDEPrice;
                       }
                     }
+
+                    print('[ComparisonScreen] Vor InfoMessage - AT: ${_currentATPrice.value?.price}, DE: ${_currentDEPrice.value?.price}');
+                    print('[ComparisonScreen] Vor InfoMessage - AT Country: ${_currentATPrice.value?.country}, DE Country: ${_currentDEPrice.value?.country}');
 
                     return Column(
                       children: [
                         ValueListenableBuilder<PriceEntry?>(
                           valueListenable: _currentATPrice,
                           builder: (context, atPrice, _) {
+                            print('[ComparisonScreen] ValueListenableBuilder AT - atPrice: ${atPrice?.price} in ${atPrice?.country}');
                             return ValueListenableBuilder<PriceEntry?>(
                               valueListenable: _currentDEPrice,
                               builder: (context, dePrice, _) {
+                                print('[ComparisonScreen] ValueListenableBuilder DE - dePrice: ${dePrice?.price} in ${dePrice?.country}');
+                                
                                 if (atPrice == null || dePrice == null) {
+                                  print('[ComparisonScreen] InfoMessage mit filteredPrices (null Preise)');
                                   return InfoMessage(allPrices: filteredPrices);
                                 }
+                                print('[ComparisonScreen] InfoMessage mit [atPrice, dePrice] (beide nicht null)');
                                 return InfoMessage(
                                   allPrices: [atPrice, dePrice],
                                 );
@@ -582,6 +707,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                                     ),
                                 firebaseService: _firebaseService,
                                 onPriceChanged: _updateCurrentATPrice,
+                                preloadedPrices: atPrices, // Übergib die bereits geladenen AT Preise
                               ),
                             ),
                             Expanded(
@@ -607,6 +733,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                                     ),
                                 firebaseService: _firebaseService,
                                 onPriceChanged: _updateCurrentDEPrice,
+                                preloadedPrices: dePrices, // Übergib die bereits geladenen DE Preise
                               ),
                             ),
                           ],
@@ -622,13 +749,19 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       ),
       floatingActionButton: ExpandableFab(
         onAddPressed: () {
+          print('[ComparisonScreen] FAB Add gedrückt');
           _showAddPriceDialog(context);
         },
         onSharePressed: () {
+          print('[ComparisonScreen] FAB Share gedrückt');
           final atPrice = _currentATPrice.value;
           final dePrice = _currentDEPrice.value;
 
+          print('[ComparisonScreen] FAB Share - AT Preis: ${atPrice?.price} in ${atPrice?.country}');
+          print('[ComparisonScreen] FAB Share - DE Preis: ${dePrice?.price} in ${dePrice?.country}');
+
           if (atPrice == null || dePrice == null) {
+            print('[ComparisonScreen] FAB Share - Nicht genügend Daten zum Teilen verfügbar');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Nicht genügend Daten zum Teilen verfügbar.'),

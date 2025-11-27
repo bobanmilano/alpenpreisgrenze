@@ -9,6 +9,8 @@ class PriceContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+        print('Rendering PriceContent mit Preis: ${priceEntry.price}');
+
     double? pricePerKg = calculatePricePerUnit(
       priceEntry.price,
       priceEntry.quantity,
